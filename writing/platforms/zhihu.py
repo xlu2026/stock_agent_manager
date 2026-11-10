@@ -31,6 +31,10 @@ CST = timezone(timedelta(hours=8))
 MAX_TOPICS = 4
 TITLE_LIMIT = 100
 
+# 知乎版文末固定加的来源说明；源文已含这句时不重复加。
+ORIGIN_LINE = "本文首发于公众号「杂灵根散修录」"
+ORIGIN_MARKER = "本文首发于公众号"
+
 # 话题只是给人工勾选的建议，最终以知乎搜索出来的话题为准。
 # 刻意避开 compliance.NAME_BANNED 里的词（股票/证券/投资/理财/基金/荐股/选股/牛股/涨停/量化选股）。
 TOPIC_MAP = {
@@ -315,6 +319,7 @@ def build_checklist(result: dict) -> list[str]:
         "打开知乎 → 创作中心 → 写文章（或专栏「杂灵根散修录」）",
         f"标题：{meta['title']}",
         f"正文：粘贴 {html_path} 的内容；格式丢了再改用 {md_path}",
+        f"文末：已自动加首发句（{ORIGIN_LINE}）；源文已含则不重复",
         f"封面：{cover}（按编辑器提示裁）",
         f"话题：{' / '.join(meta['topics']) or '手动选'}",
         "声明：按知乎规则标注 AI 辅助创作；原创/转载按后台实际选项",
@@ -353,7 +358,10 @@ def export_article(path: str, *, out_dir: str | None = None) -> dict:
     if not compliance["ok"]:
         raise ExportRejected(compliance)
 
-    zhihu_markdown = strip_h1(body)
+    zhihu_markdown = strip_h1(body).rstrip("\n")
+    if ORIGIN_MARKER not in zhihu_markdown:
+        zhihu_markdown = f"{zhihu_markdown}\n\n{ORIGIN_LINE}"
+    zhihu_markdown += "\n"
     html_out = markdown_to_html(zhihu_markdown)
 
     date = _date_of(front, path)

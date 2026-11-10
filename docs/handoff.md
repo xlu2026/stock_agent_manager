@@ -46,7 +46,7 @@ Phase 1 已经跑通"研究指令 → 确定性回测 → 指标与实验 ID"，
 | 模拟盘 + 券商抽象层 | `quant/paper.py` `quant/broker/` | ✅ 只有 PaperBroker |
 | 下单三段式（提案 → 人工批准 → 提交） | `quant/broker/proposals.py` `approve.py` | ✅ 已实测 |
 | 写作侧（渲染、合规、草稿接口） | `writing/` | ✅ |
-| 知乎导出（HTML/MD/meta，无发布） | `writing/platforms/zhihu.py` `writing/export.py` | ✅ 导出 + 人工清单 |
+| 知乎导出（HTML/MD/meta，无发布） | `writing/platforms/zhihu.py` `writing/export.py` | ✅ 导出 + 人工清单；文末自动加首发句 |
 | 知乎发布（开篇） | https://zhuanlan.zhihu.com/p/2103182137985976284 | ✅ 2026-11-09 手动发布；AI 声明/首发句/3 话题已核对 |
 | DSH 两套 profile（工具面隔离） | `cordis/` + `tools/build_cordis.py` | ✅ 已实测 |
 | 数据契约 v2 + 快照体检 + 通用 CSV 导入器 | `quant/providers/` | ✅ 消费端已认 v2，无真实数据 |

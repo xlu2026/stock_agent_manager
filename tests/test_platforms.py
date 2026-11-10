@@ -93,6 +93,24 @@ class ZhihuExportTests(unittest.TestCase):
             self.assertIn(text, html_text)
             self.assertIn(text, md_text)
 
+    def test_origin_footer_appended_once(self) -> None:
+        result = self._export()
+        html_text = self._read(result["html_path"])
+        md_text = self._read(result["markdown_path"])
+        self.assertIn(zhihu.ORIGIN_LINE, html_text)
+        self.assertEqual(md_text.count(zhihu.ORIGIN_LINE), 1)
+        self.assertTrue(md_text.rstrip().endswith(zhihu.ORIGIN_LINE))
+        self.assertTrue(html_text.rstrip().endswith(f"<p>{zhihu.ORIGIN_LINE}</p>"))
+
+    def test_origin_footer_not_duplicated(self) -> None:
+        markdown = self.rendered["markdown"].rstrip("\n") + "\n\n" + zhihu.ORIGIN_LINE + "\n"
+        path = self._write(markdown, "with-footer.md")
+        result = zhihu.export_article(path, out_dir=os.path.join(self.tmp.name, "footer"))
+        md_text = self._read(result["markdown_path"])
+        html_text = self._read(result["html_path"])
+        self.assertEqual(md_text.count(zhihu.ORIGIN_LINE), 1)
+        self.assertEqual(html_text.count(zhihu.ORIGIN_LINE), 1)
+
     def test_export_rechecks_compliance(self) -> None:
         bad = dict(
             BRIEF,
