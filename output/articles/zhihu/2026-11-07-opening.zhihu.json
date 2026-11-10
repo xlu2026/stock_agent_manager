@@ -1,0 +1,31 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "开篇：先苟住，再谈筑基",
+  "slug": "opening",
+  "date": "2026-11-07",
+  "series": "杂灵根散修录",
+  "category": "杂项",
+  "summary": "一个非科班的散户，打算把价值判断写成可回测的因子，把被打脸的过程公开记下来。先说三条规矩。",
+  "topics": [
+    "独立思考",
+    "个人成长",
+    "效率工具",
+    "方法论"
+  ],
+  "cover": "output\\articles\\cover-opening-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\2026-11-07-opening.md",
+  "source_sha256": "96849ed5d850d4a58b0a6346f19e88e2d96bb97c8a0d958f7b47f8f44c43f432",
+  "exported_at": "2026-11-09T17:55:04+08:00",
+  "status": "published",
+  "canonical": "https://zhuanlan.zhihu.com/p/2103182137985976284",
+  "published_at": "2026-11-09T17:52:00+08:00",
+  "published": true,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  },
+  "notes": "手动发布（2026-11-09 17:52，四川）；AI 声明已勾；收录于专栏；实际话题 3 个（独立思考/个人成长/效率工具，未含方法论）；首发句已加"
+}

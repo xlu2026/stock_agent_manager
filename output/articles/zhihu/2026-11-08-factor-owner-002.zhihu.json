@@ -1,0 +1,30 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "因子由谁选：把选择权放进代码",
+  "slug": "factor-owner-002",
+  "date": "2026-11-08",
+  "series": "杂灵根散修录",
+  "category": "量化研究",
+  "summary": "一句自然语言里的因子逻辑，最后由谁翻译成引擎认得的那一个函数。这一步交给一张关键词表，不交给模型。",
+  "topics": [
+    "量化交易",
+    "回测",
+    "因子模型",
+    "Python"
+  ],
+  "cover": "output\\articles\\covers\\cover-quant-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\2026-11-08-factor-owner-002.md",
+  "source_sha256": "bae5834136c2a934dd3d3c7ea0da3843d7be9c678743e8c0983c14a10ca3a791",
+  "exported_at": "2026-11-09T16:28:59+08:00",
+  "status": "exported",
+  "canonical": null,
+  "published_at": null,
+  "published": false,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  }
+}

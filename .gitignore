@@ -1,0 +1,24 @@
+# 忽略运行时产物与本地凭据
+.env
+.env.local
+*.pyc
+__pycache__/
+*.tmp
+*.bak
+
+# 本地草稿/临时产物
+output/rejected/
+.probe/
+.tmp/
+
+# 运行时记录：会话证据与模拟盘台账，不进公开仓库
+output/evidence/
+output/broker/
+
+# 汇报 JSON 可随时用 `python scripts\acceptance.py` 重新生成，
+# 但验收结论要留在仓库里，作为可复查的证据。
+output/reports/*.json
+!output/reports/acceptance.json
+
+# experiments/ 不忽略：实验记录本身是"公开日志"的一部分，
+# 每条记录都带 spec、数据指纹与 nav_hash，删掉就等于毁掉可复现性。

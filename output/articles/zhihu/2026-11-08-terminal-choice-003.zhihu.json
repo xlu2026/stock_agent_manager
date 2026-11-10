@@ -1,0 +1,30 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "交易终端怎么选：先看数据能不能落地",
+  "slug": "terminal-choice-003",
+  "date": "2026-11-08",
+  "series": "杂灵根散修录",
+  "category": "量化研究",
+  "summary": "选交易终端之前，先确认一件更基础的事：行情能不能落到本地硬盘。落不了地，快照、指纹、可复现都无从谈起。",
+  "topics": [
+    "量化交易",
+    "回测",
+    "因子模型",
+    "Python"
+  ],
+  "cover": "output\\articles\\covers\\cover-quant-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\2026-11-08-terminal-choice-003.md",
+  "source_sha256": "d099b46299593a2c0c49c73ee62e161bf5ec3963706f8799794b5dc12c8ddf72",
+  "exported_at": "2026-11-09T16:28:59+08:00",
+  "status": "exported",
+  "canonical": null,
+  "published_at": null,
+  "published": false,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "experiment_id": "exp-a359c2d77697",
+  "data_source": "synthetic",
+  "research_question": "过去一年涨幅靠前的标的，接下来一个月是否继续走强？",
+  "factor_logic": "过去 12 个月动量（剔除最近 1 个月）：涨幅靠前的标的在接下来一个月是否延续强势",
+  "backtest_summary": {
+    "window": "2020-01-02..2024-12-31",
+    "rebalance": "M",
+    "top_k": 8,
+    "cost_bps": 10,
+    "cagr": 0.1115,
+    "sharpe": 1.4186,
+    "max_drawdown": -0.143247,
+    "annual_turnover": 2.2015,
+    "benchmark_cagr": 0.040773,
+    "ic_mean": 0.0506,
+    "nav_hash": "fc5c9e778707e5f1280d1084c4018342aa4013a248e9aec2b3b2391b64a47f1a",
+    "data_version": "dv-572bafec2a92"
+  },
+  "user_notes": "本来以为低波动会更抗跌，结果在这份数据里低波动是负的；动量反而成立。想写的是『我原来以为』这件事，不是动量有多好。别写成方法教程。",
+  "target_structure": null,
+  "timestamp": "2026-11-07T11:00:00+08:00"
+}

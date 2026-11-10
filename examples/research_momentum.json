@@ -1,0 +1,12 @@
+{
+  "factor": "momentum_12_1",
+  "universe": "synthetic_40",
+  "start": "2020-01-02",
+  "end": "2024-12-31",
+  "rebalance": "M",
+  "top_k": 8,
+  "weighting": "equal",
+  "cost_bps": 10,
+  "seed": 42,
+  "data_version": "dv-572bafec2a92"
+}

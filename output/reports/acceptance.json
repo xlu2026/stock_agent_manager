@@ -1,0 +1,143 @@
+{
+  "schema": "nerve.acceptance/v1",
+  "ok": true,
+  "python": "3.12.8",
+  "checks": [
+    {
+      "check": "1. 确定性回测（同输入同结果）",
+      "ok": true,
+      "detail": {
+        "experiment_id": "exp-a359c2d77697",
+        "nav_hash": "fc5c9e778707e5f1280d1084c4018342aa4013a248e9aec2b3b2391b64a47f1a",
+        "cagr": 0.1115,
+        "sharpe": 1.4186,
+        "max_drawdown": -0.143247,
+        "data_version": "dv-572bafec2a92",
+        "rebalances": 60
+      }
+    },
+    {
+      "check": "2. MCP 工具面可发现可调用",
+      "ok": true,
+      "detail": {
+        "tools": [
+          "run_research_instruction",
+          "run_backtest",
+          "validate_strategy",
+          "list_experiments",
+          "get_experiment",
+          "run_factor_analysis",
+          "run_paper_session",
+          "broker_account",
+          "broker_orders",
+          "broker_propose_order",
+          "broker_submit_order"
+        ],
+        "steps_ok": 12,
+        "steps_total": 12
+      }
+    },
+    {
+      "check": "3. Agent 1 闭环（四字段指令 -> 回测 -> 指标 + 实验 ID）",
+      "ok": true,
+      "detail": {
+        "status": "ok",
+        "experiment_id": "exp-a359c2d77697",
+        "artifacts": [
+          "experiments/exp-a359c2d77697.json"
+        ],
+        "cagr": 0.1115,
+        "nav_hash": "fc5c9e778707e5f1280d1084c4018342aa4013a248e9aec2b3b2391b64a47f1a",
+        "contract_kind": "phase1_contract/v1",
+        "mapped_factor": [
+          "momentum_12_1"
+        ],
+        "mapping_source": "keyword_table"
+      }
+    },
+    {
+      "check": "4. Agent 3 降级路径（front matter Markdown）",
+      "ok": true,
+      "detail": {
+        "status": "ok",
+        "channel": "markdown",
+        "path": "output/reports/acceptance_article/2026-11-08-factor-to-backtest-001.md",
+        "word_count": 1123,
+        "front_matter": true,
+        "decision_reason": "草稿接口可用，但缺少 thumb_media_id（草稿必须有封面素材），降级为 Markdown"
+      }
+    },
+    {
+      "check": "4b. 知乎导出（无 front matter、合规声明、无发布面）",
+      "ok": true,
+      "detail": {
+        "no_front_matter": true,
+        "no_h1": true,
+        "disclaimer_verbatim": true,
+        "topics": true,
+        "published_false": true,
+        "publish_api_absent": true
+      }
+    },
+    {
+      "check": "5. 公众号草稿接口预检给出明确结论",
+      "ok": true,
+      "detail": {
+        "verdict": "DRAFT_API_AVAILABLE",
+        "reason": "OK",
+        "detail": "草稿接口已授权（占位 media_id 被拒属预期）"
+      }
+    },
+    {
+      "check": "6. 工具面不交叉（量化 MCP 只在 quant 侧注册）",
+      "ok": true,
+      "detail": {
+        "quant_has_srq": true,
+        "writing_has_srq": false,
+        "writing_has_draft_server": true,
+        "writing_shell_disabled": true,
+        "installed_profiles_checked": true,
+        "profiles_dir": "C:\\Users\\ADMIN\\.dsh\\profiles"
+      }
+    },
+    {
+      "check": "7. 无实盘下单能力（全仓无 live_submit_order 实现）",
+      "ok": true,
+      "detail": {
+        "files_with_live_order": []
+      }
+    },
+    {
+      "check": "8. 已安装 profile 与仓库生成物一致（无手改漂移）",
+      "ok": true,
+      "detail": {
+        "missing": [],
+        "drifted": [],
+        "profiles_dir": "C:\\Users\\ADMIN\\.dsh\\profiles"
+      }
+    },
+    {
+      "check": "9. 券商抽象层（确认闸门 + 模拟成交 + 审计）",
+      "ok": true,
+      "detail": {
+        "unconfirmed": "REJECTED",
+        "reason": "NOT_CONFIRMED",
+        "confirmed": "FILLED",
+        "ledger": "acc_probe.jsonl",
+        "note": "真实券商适配器尚未实现，当前只有 PaperBroker"
+      }
+    },
+    {
+      "check": "10. 策略文档与代码同步",
+      "ok": true,
+      "detail": {
+        "doc": "docs/strategy.md",
+        "factors_documented": 4,
+        "factors_total": 4,
+        "missing_factors": [],
+        "engine_version_in_doc": true,
+        "spec_version_in_doc": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "schema": "nerve.covers/v1",
+  "note": "栏目封面的永久素材 media_id。wide=2.35:1 头图，square=1:1 次图。push_draft.py --category 会读这里。",
+  "量化研究": {
+    "wide": "oQ7ed1ezuToxNUiewgDQhziRTwCvzzDMs8zLyeuE_jyA-dBRkbdaGyXZ58ZBTtl6",
+    "square": null
+  },
+  "AI技术": {
+    "wide": "oQ7ed1ezuToxNUiewgDQh1si_VbZa5a7HXKGqJKVQW4L32Jo38nl9zp9WnMB-pba",
+    "square": null
+  },
+  "市场复盘": {
+    "wide": null,
+    "square": null
+  },
+  "杂项": {
+    "wide": null,
+    "square": null
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "打通到草稿箱，最后一步我留给自己",
+  "slug": "agent-to-draftbox-001",
+  "date": "2026-11-08",
+  "series": "杂灵根散修录",
+  "category": "AI技术",
+  "summary": "昨天的开篇由 agent 推进草稿箱。今天把这条管道拆开，记录它卡住的四个地方，以及发布为什么留在人工环节。",
+  "topics": [
+    "人工智能",
+    "AI Agent",
+    "编程",
+    "软件工程"
+  ],
+  "cover": "output\\articles\\covers\\cover-ai-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\2026-11-08-agent-to-draftbox-001.md",
+  "source_sha256": "3a5497efaa972c624941057dace6f73fb517f2f61e3185a663001be1e5de471d",
+  "exported_at": "2026-11-09T16:28:59+08:00",
+  "status": "exported",
+  "canonical": null,
+  "published_at": null,
+  "published": false,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  }
+}

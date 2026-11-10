@@ -1,0 +1,30 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "把判断写成因子：先让回测跑起来",
+  "slug": "factor-to-backtest-001",
+  "date": "2026-11-08",
+  "series": "杂灵根散修录",
+  "category": "量化研究",
+  "summary": "一个人有没有可能把自己的判断写成可被证伪的因子？这一篇先把管道打通：结构化研究指令进，确定性回测出，指标和实验 ID 一起落盘。",
+  "topics": [
+    "量化交易",
+    "回测",
+    "因子模型",
+    "Python"
+  ],
+  "cover": "output\\articles\\covers\\cover-quant-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\2026-11-08-factor-to-backtest-001.md",
+  "source_sha256": "63fd6fe998284f7e37a5920f9aa50c40cf310202c77a0666f399a8a1b98c7f26",
+  "exported_at": "2026-11-09T16:28:59+08:00",
+  "status": "exported",
+  "canonical": null,
+  "published_at": null,
+  "published": false,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  }
+}
