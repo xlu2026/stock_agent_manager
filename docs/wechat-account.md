@@ -92,7 +92,7 @@ AppID 在页面开头，「开发密钥」里是 AppSecret（启用 / 重置）�
 | 开篇封面（2.35:1） | `oQ7ed1ezuToxNUiewgDQhzBQ3sghms-F67YLxPYgPfTtFNQwpN0ZQzr6HJimJT2d` |
 | 001（**已发布**，2026-11-10） | 草稿 media_id `oQ7ed1ezuToxNUiewgDQh3S1QzJ9sqosrtcPws9jmn4WxZkw8RGqAUsQFhwxs6-P`（发布后保留作历史）；封面素材 `oQ7ed1ezuToxNUiewgDQhziRTwCvzzDMs8zLyeuE_jyA-dBRkbdaGyXZ58ZBTtl6`（源 `covers/cover-quant-2.35x1.png`）；源文件 `C:\AI_workspace\wechat_writing\articles\2026-11-08-factor-to-backtest-001.md`（front matter `status: published`、`category: 量化研究`） |
 | 量化研究 002（**已发布**，2026-11-10） | 草稿 media_id `oQ7ed1ezuToxNUiewgDQhzTyRJrUcdsg9nDfZlJH8uz7904NjlGzwNVdagLnbmip`（发布后保留作历史）；封面沿用 `covers/cover-quant-2.35x1.png`（素材同上）；源文件 `C:\AI_workspace\wechat_writing\articles\2026-11-08-factor-owner-002.md` |
-| 量化研究 003（**已在草稿箱**） | 草稿 media_id `oQ7ed1ezuToxNUiewgDQhwKUBp61hUk2EV5HZf-DDfdrXrK7bZtfEnAw7i0uCgCQ`；封面沿用 `covers/cover-quant-2.35x1.png`（素材同上）；源文件 `C:\AI_workspace\wechat_writing\articles\` 下同名文件 |
+| 量化研究 003（**已发布 2026-11-11**） | 草稿 media_id `oQ7ed1ezuToxNUiewgDQhwKUBp61hUk2EV5HZf-DDfdrXrK7bZtfEnAw7i0uCgCQ`；封面沿用 `covers/cover-quant-2.35x1.png`（素材同上）；源文件 `C:\AI_workspace\wechat_writing\articles\` 下同名文件 |
 | AI技术 002（**已在草稿箱**） | 草稿 media_id `oQ7ed1ezuToxNUiewgDQh-9_AhBJHlDal1hBZoSsmL0wIXxkts4-TzQxAhdsf_FD`；封面沿用 `covers/cover-ai-2.35x1.png`（素材同上）；源文件 `C:\AI_workspace\wechat_writing\articles\` 下同名文件 |
 | AI技术 001（原开发日志 002，**已发布**） | 草稿 media_id `oQ7ed1ezuToxNUiewgDQhwTDo2stSy2m8M1cvkHj1lgY7VRVhRZZBqVuiGiRLDa_`（发布后已移出草稿箱）；封面素材 `oQ7ed1ezuToxNUiewgDQh1si_VbZa5a7HXKGqJKVQW4L32Jo38nl9zp9WnMB-pba`（源 `covers/cover-ai-2.35x1.png`）；源文件 `C:\AI_workspace\wechat_writing\articles\2026-11-08-agent-to-draftbox-001.md` |
 | 封面源文件 | `output/articles/cover-opening-2.35x1.png`、`cover-opening-1x1.png` |
@@ -102,7 +102,7 @@ AppID 在页面开头，「开发密钥」里是 AppSecret（启用 / 重置）�
 本表是给人看的摘要；草稿位置以 `output/reports/drafts.jsonl` 账本为准（每次推送追加一行）。
 
 `status` 取值：`draft`（待发）/ `published`（已发布，配 `published_at`）/ `archived`（暂不使用）。
-发布稿另有 `ai_declared` 记录发布时勾了什么。开篇、001、002 的 front matter 已按此更新。
+发布稿另有 `ai_declared` 记录发布时勾了什么。开篇、001、002、003 的 front matter 已按此更新。
 
 ## 5. 待办
 
@@ -110,7 +110,7 @@ AppID 在页面开头，「开发密钥」里是 AppSecret（启用 / 重置）�
 - [ ] **access_token 加缓存**：7200 秒有效，提前 5 分钟刷新；当前每次现取。
 - [x] **量化研究 001**：已发布（2026-11-10）；front matter 已补 `status: published`。
 - [x] **量化研究 002**：已发布（2026-11-10）；front matter 已补。
-- [ ] **量化研究 003**：已入草稿箱。勾「原创」「AI 声明」，合集「量化研究」。
+- [x] **量化研究 003**：已发布（2026-11-11）；front matter 已补。
 - [ ] **AI技术 002**：已入草稿箱。勾「原创」「AI 声明」，合集「AI技术」。
 - [ ] 在后台确认封面在列表卡片里的裁切效果（头图中间区域最安全）。
 - [ ] 流量主开通后：设置行业屏蔽（金融大类）+ 广告主屏蔽（点名校验）。
@@ -147,3 +147,4 @@ AppID 在页面开头，「开发密钥」里是 AppSecret（启用 / 重置）�
 | 2026-11-09 | 主会话成文的三篇（量化研究 002/003、AI技术 002）移到 `C:\AI_workspace\wechat_writing\articles\`；仓库 `output/articles/` 只留 001（重渲染产物）与开篇（已发布） |
 | 2026-11-10 | 量化研究 001 已发布；front matter 补 `status: published` / `published_at: 2026-11-10` |
 | 2026-11-10 | 量化研究 002 已发布；front matter 补 `status: published` / `published_at: 2026-11-10` |
+| 2026-11-11 | 量化研究 003（交易终端怎么选）已发布；沿用 mark_published 回写 front matter、CHANGELOG 与 git 提交 |
