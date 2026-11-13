@@ -1,0 +1,30 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "QMT 关掉之后",
+  "slug": "qmt-shutdown-004",
+  "date": "2026-11-12",
+  "series": "杂灵根散修录",
+  "category": "量化研究",
+  "summary": "个人终端入口被关掉之后，我把三条替代通道各跑了一遍，结论是接受半自动，并把架构和券商解耦。",
+  "topics": [
+    "量化交易",
+    "回测",
+    "因子模型",
+    "Python"
+  ],
+  "cover": "output\\articles\\covers\\cover-quant-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\[量化研究_004] 2026-11-12-qmt-shutdown-004.md",
+  "source_sha256": "d288a77af1736dabc99dc77701ddf311b95d6343942e70f79f2611aff9d9c754",
+  "exported_at": "2026-11-13T13:50:25+08:00",
+  "status": "exported",
+  "canonical": null,
+  "published_at": null,
+  "published": false,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  }
+}
