@@ -21,7 +21,7 @@ from . import experiments as exp_store
 from .broker import OrderRequest, OrderType, PaperBroker, Side, price_from_panel
 from .broker import proposals as broker_proposals
 from .engine import run_backtest, run_factor_analysis
-from .instruction import parse_instruction
+from .instruction import UNIVERSE_ALIASES, InstructionError, parse_instruction
 from .paper import run_paper_session
 from .spec import FACTORS, REBALANCE, SpecError, parse_spec
 from .validate import validate_strategy
@@ -34,7 +34,7 @@ SPEC_SCHEMA: dict[str, Any] = {
     "description": "结构化研究指令（引擎 spec）",
     "properties": {
         "factor": {"type": "string", "enum": sorted(FACTORS)},
-        "universe": {"type": "string", "enum": ["synthetic_40"]},
+        "universe": {"type": "string", "enum": sorted(set(UNIVERSE_ALIASES.values()))},
         "start": {"type": "string", "description": "YYYY-MM-DD"},
         "end": {"type": "string", "description": "YYYY-MM-DD"},
         "rebalance": {"type": "string", "enum": sorted(REBALANCE)},
@@ -71,15 +71,37 @@ def _tool_get(args: dict) -> dict:
     return exp_store.get_experiment(eid, bool(args.get("include_series", False)))
 
 
+def _tool_get_holdings(args: dict) -> dict:
+    eid = args.get("experiment_id")
+    if not isinstance(eid, str):
+        raise SpecError("experiment_id 必须是字符串")
+    date = args.get("date")
+    if date is not None and not isinstance(date, str):
+        raise SpecError("date 必须是 YYYY-MM-DD 字符串")
+    return exp_store.get_experiment_holdings(eid, date)
+
+
 def _tool_factor(args: dict) -> dict:
     spec = parse_spec(args.get("spec", args))
     return run_factor_analysis(spec, int(args.get("quantiles", 5)))
 
 
 def _tool_research(args: dict) -> dict:
-    """四字段研究指令入口：契约解析与因子映射都在服务端确定性地完成。"""
-    instruction = parse_instruction(args)
-    return _run_spec(instruction.to_spec(), contract={
+    """四字段研究指令入口：契约解析、因子映射、静态校验都在服务端完成。"""
+    try:
+        instruction = parse_instruction(args)
+    except InstructionError as exc:
+        return {
+            "ok": False,
+            "status": "rejected",
+            "stage": "contract",
+            "code": exc.code,
+            "message": str(exc),
+            "extra": exc.extra,
+        }
+    spec = instruction.to_spec()
+    contract = {
+        "kind": "phase1_contract/v1",
         "instruction": {
             "question": instruction.question,
             "universe_raw": args["universe"],
@@ -87,7 +109,65 @@ def _tool_research(args: dict) -> dict:
             "factor_logic": instruction.factor_logic,
         },
         "mapping": instruction.mapping,
-    })
+        "resolved": {
+            "universe": instruction.universe,
+            "start": instruction.start,
+            "end": instruction.end,
+            "factor": instruction.factor,
+        },
+    }
+    validation = validate_strategy(spec)
+    contract["validation"] = {"verdict": validation["verdict"], "checks": validation["checks"]}
+    if not validation.get("ok"):
+        failures = [c for c in validation["checks"] if c["status"] == "fail"]
+        return {
+            "ok": False,
+            "status": "rejected",
+            "stage": "validation",
+            "message": "研究指令未通过静态校验；未登记实验",
+            "failures": failures,
+            "contract": contract,
+            "spec": spec,
+        }
+    return _run_spec(spec, contract=contract)
+
+
+def _tool_research_factor(args: dict) -> dict:
+    """研究模式下的因子分析：因子仍由关键词表映射，模型不能自选。"""
+    params = {k: v for k, v in args.items() if k != "quantiles"}
+    instruction = parse_instruction(params)
+    return run_factor_analysis(parse_spec(instruction.to_spec()), int(args.get("quantiles", 5)))
+
+
+def _tool_research_paper(args: dict) -> dict:
+    """研究模式下的模拟盘：因子仍由关键词表映射，不产生实盘订单。"""
+    params = {k: v for k, v in args.items() if k != "sessions"}
+    instruction = parse_instruction(params)
+    return run_paper_session(parse_spec(instruction.to_spec()), int(args.get("sessions", 20)))
+
+
+RESEARCH_PROPERTIES: dict[str, Any] = {
+    "question": {"type": "string", "description": "研究问题描述"},
+    "universe": {"type": "string", "description": "标的池，如 synthetic_40 或 沪深300"},
+    "period": {"type": "string", "description": "起止日期，如 2020-01-02~2024-12-31"},
+    "factor_logic": {"type": "string", "description": "待检验的因子逻辑（自然语言）"},
+    "rebalance": {"type": "string", "enum": sorted(REBALANCE)},
+    "top_k": {"type": "integer", "minimum": 1, "maximum": 40},
+    "cost_bps": {"type": "number", "minimum": 0},
+    "seed": {"type": "integer", "minimum": 0},
+    "data_version": {"type": "string"},
+}
+
+
+def _research_arg(extra: dict[str, Any] | None = None) -> dict[str, Any]:
+    properties = dict(RESEARCH_PROPERTIES)
+    properties.update(extra or {})
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": ["question", "universe", "period", "factor_logic"],
+        "additionalProperties": False,
+    }
 
 
 def _run_spec(spec_dict: dict, contract: dict | None = None) -> dict:
@@ -270,23 +350,26 @@ TOOLS: list[dict[str, Any]] = [
             "factor_logic 是自然语言，由服务端的关键词映射表确定性地翻译成引擎因子，"
             "模型不能自行指定因子。返回指标、实验 ID 与映射明细。"
         ),
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "question": {"type": "string", "description": "研究问题描述"},
-                "universe": {"type": "string", "description": "标的池，如 synthetic_40"},
-                "period": {"type": "string", "description": "起止日期，如 2020-01-02~2024-12-31"},
-                "factor_logic": {"type": "string", "description": "待检验的因子逻辑（自然语言）"},
-                "rebalance": {"type": "string", "enum": sorted(REBALANCE)},
-                "top_k": {"type": "integer", "minimum": 1, "maximum": 40},
-                "cost_bps": {"type": "number", "minimum": 0},
-                "seed": {"type": "integer", "minimum": 0},
-                "data_version": {"type": "string"},
-            },
-            "required": ["question", "universe", "period", "factor_logic"],
-            "additionalProperties": False,
-        },
+        "inputSchema": _research_arg(),
         "handler": _tool_research,
+    },
+    {
+        "name": "run_research_factor_analysis",
+        "description": (
+            "研究模式下的因子分析：四字段指令 + quantiles，因子由关键词表映射，"
+            "模型不能自行指定 factor。返回 Rank IC、IC_IR、分位收益与单调性。"
+        ),
+        "inputSchema": _research_arg({"quantiles": {"type": "integer", "minimum": 2, "maximum": 10}}),
+        "handler": _tool_research_factor,
+    },
+    {
+        "name": "run_research_paper_session",
+        "description": (
+            "研究模式下的历史模拟盘：四字段指令 + sessions，因子由关键词表映射。"
+            "只产出 PAPER 台账，不具备任何实盘下单能力。"
+        ),
+        "inputSchema": _research_arg({"sessions": {"type": "integer", "minimum": 1, "maximum": 60}}),
+        "handler": _tool_research_paper,
     },
     {
         "name": "run_backtest",
@@ -326,6 +409,23 @@ TOOLS: list[dict[str, Any]] = [
             "additionalProperties": False,
         },
         "handler": _tool_get,
+    },
+    {
+        "name": "get_experiment_holdings",
+        "description": (
+            "读取某次实验的内部持仓明细（含个股代码），只用于内部订单草案，"
+            "不得写进公开输出。可传 date 只取某一天。"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "experiment_id": {"type": "string"},
+                "date": {"type": "string", "description": "YYYY-MM-DD，可选"},
+            },
+            "required": ["experiment_id"],
+            "additionalProperties": False,
+        },
+        "handler": _tool_get_holdings,
     },
     {
         "name": "run_factor_analysis",
@@ -418,17 +518,34 @@ INSTRUCTIONS = (
     "下单走 broker_* 工具：先 propose 生成提案，必须由人工在终端批准后才能 submit。"
 )
 
-def build_server() -> McpServer:
+RESEARCH_TOOLSET = {
+    "run_research_instruction",
+    "run_research_factor_analysis",
+    "run_research_paper_session",
+    "list_experiments",
+    "get_experiment",
+    "get_experiment_holdings",
+    "broker_account",
+    "broker_orders",
+    "broker_propose_order",
+    "broker_submit_order",
+}
+
+
+def build_server(toolset: str = "full") -> McpServer:
+    tools = TOOLS
+    if toolset == "research":
+        tools = [t for t in TOOLS if t["name"] in RESEARCH_TOOLSET]
     return McpServer(
         name=SERVER_NAME,
         version=SERVER_VERSION,
         instructions=INSTRUCTIONS,
-        tools=TOOLS,
+        tools=tools,
     )
 
 
-def serve() -> int:
-    return build_server().serve()
+def serve(toolset: str = "full") -> int:
+    return build_server(toolset).serve()
 
 
 if __name__ == "__main__":

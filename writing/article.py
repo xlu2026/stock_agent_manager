@@ -86,10 +86,23 @@ def word_count(text: str) -> int:
     return cjk + latin
 
 
-def update_front_matter(path: str, updates: dict[str, str]) -> dict:
+def _fm_literal(value: object) -> str:
+    """front matter 标量：数字/布尔/null 原样写，字符串加引号。"""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return json.dumps(value)
+    if value is None:
+        return "null"
+    text = str(value).replace('"', '\\"')
+    return f'"{text}"'
+
+
+def update_front_matter(path: str, updates: dict[str, object]) -> dict:
     """就地改写 front matter 里的若干字段，正文原样保留。
 
     只做行级替换，不引入 YAML 依赖：已有 key 换行，缺的 key 补在闭合 `---` 之前。
+    数字和布尔不加引号（`word_count: 872`），字符串加引号。
     返回 {key: 新值}，便于调用方回显。
     """
     with open(path, encoding="utf-8-sig") as fh:
@@ -107,13 +120,13 @@ def update_front_matter(path: str, updates: dict[str, str]) -> dict:
     for i, line in enumerate(lines):
         for key, value in updates.items():
             if line.startswith(f"{key}:"):
-                lines[i] = f'{key}: "{value}"'
+                lines[i] = f"{key}: {_fm_literal(value)}"
                 done.add(key)
 
     missing = [k for k in updates if k not in done]
     if missing:
         for key in missing:
-            lines.append(f'{key}: "{updates[key]}"')
+            lines.append(f"{key}: {_fm_literal(updates[key])}")
 
     with open(path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(lines) + tail)

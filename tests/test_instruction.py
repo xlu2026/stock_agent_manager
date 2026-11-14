@@ -14,6 +14,7 @@ from quant.instruction import (  # noqa: E402
     parse_instruction,
     parse_period,
     resolve_factor,
+    resolve_universe,
 )
 
 BASE = {
@@ -38,6 +39,15 @@ class PeriodTests(unittest.TestCase):
         with self.assertRaises(InstructionError) as ctx:
             parse_period("2020-01-02")
         self.assertEqual(ctx.exception.code, "BAD_PERIOD")
+
+
+class UniverseTests(unittest.TestCase):
+    def test_real_aliases_point_to_pit(self) -> None:
+        for name in ("沪深300", "HS300", "hs300", "真实池", "真实40", "时点成分", "hs300_40_pit"):
+            self.assertEqual(resolve_universe(name), "hs300_40_pit", name)
+
+    def test_fixed_pool_alias_kept_for_contrast(self) -> None:
+        self.assertEqual(resolve_universe("hs300_40"), "hs300_40")
 
 
 class FactorMappingTests(unittest.TestCase):
@@ -92,9 +102,10 @@ class ContractTests(unittest.TestCase):
 
     def test_universe_unavailable_is_honest(self) -> None:
         with self.assertRaises(InstructionError) as ctx:
-            parse_instruction({**BASE, "universe": "沪深300"})
+            parse_instruction({**BASE, "universe": "中证1000"})
         self.assertEqual(ctx.exception.code, "UNIVERSE_UNAVAILABLE")
         self.assertIn("synthetic_40", ctx.exception.extra["available"])
+        self.assertIn("hs300_40_pit", ctx.exception.extra["available"])
 
 
 if __name__ == "__main__":

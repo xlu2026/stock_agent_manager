@@ -46,10 +46,10 @@ def _emit(obj) -> None:
 
 def cmd_mcp(args) -> int:
     if args.action != "serve":
-        raise SystemExit("用法：mcp serve")
+        raise SystemExit("用法：mcp serve [--toolset full|research]")
     from .mcp_server import serve
 
-    return serve()
+    return serve(getattr(args, "toolset", "full"))
 
 
 def cmd_research(args) -> int:
@@ -174,6 +174,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     m = sub.add_parser("mcp", help="MCP 相关操作")
     m.add_argument("action", choices=["serve"])
+    m.add_argument("--toolset", choices=["full", "research"], default="full")
     m.set_defaults(func=cmd_mcp)
 
     for name, fn, extra in (

@@ -153,6 +153,22 @@ class ArticleRenderTests(unittest.TestCase):
         self.assertIn('published_at: "2026-11-09"', text)
         self.assertEqual(text.split("---\n", 2)[2], body_before)
 
+    def test_update_front_matter_keeps_numbers_unquoted(self) -> None:
+        """数字字段不能加引号，否则 word_count 变成字符串。"""
+        import tempfile
+
+        out = art.render(BRIEF)
+        d = tempfile.mkdtemp(prefix="fm-num-")
+        path = os.path.join(d, "a.md")
+        with open(path, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(out["markdown"])
+
+        art.update_front_matter(path, {"word_count": 872, "experiment_ref": "exp-1"})
+        text = open(path, encoding="utf-8").read()
+        self.assertIn("word_count: 872", text)
+        self.assertNotIn('word_count: "872"', text)
+        self.assertIn('experiment_ref: "exp-1"', text)
+
     def test_brief_can_pin_date(self) -> None:
         """简报钉住日期后，重渲染不会改文件名里的日期，也不会每天多出一个副本。"""
         pinned = art.render(dict(BRIEF, date="2026-11-08"))

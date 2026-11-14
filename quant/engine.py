@@ -353,5 +353,5 @@ def run_factor_analysis(spec: Spec, quantiles: int = 5) -> dict:
         "top_minus_bottom": round(spread, 6),
         "monotonic": monotonic,
         "ic_series": ic_series[-24:],
-        "note": "IC 基于合成样本数据，仅用于验证分析链路，不代表真实预测力。",
+        "note": f"IC 基于 {panel.source} 数据，仅用于分析链路，不代表预测力。",
     }

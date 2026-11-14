@@ -5,10 +5,12 @@ Agent 1 通过它与 srq MCP 服务端通信，走的是 LLM 未来会走的同�
 """
 from __future__ import annotations
 
+import collections
 import json
 import os
 import subprocess
 import sys
+import threading
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -23,6 +25,8 @@ class McpClient:
         self.cwd = cwd or ROOT
         self.proc: subprocess.Popen | None = None
         self._id = 0
+        self._stderr_tail: collections.deque[str] = collections.deque(maxlen=200)
+        self._stderr_thread: threading.Thread | None = None
 
     def __enter__(self) -> "McpClient":
         env = dict(os.environ)
@@ -38,6 +42,9 @@ class McpClient:
             encoding="utf-8",
             env=env,
         )
+        # stderr 必须持续排空：服务端日志写满管道缓冲会让它自己阻塞在 write 上。
+        self._stderr_thread = threading.Thread(target=self._drain_stderr, daemon=True)
+        self._stderr_thread.start()
         self._request(
             "initialize",
             {
@@ -63,8 +70,22 @@ class McpClient:
             for stream in (self.proc.stdout, self.proc.stderr):
                 if stream:
                     stream.close()
+            if self._stderr_thread:
+                self._stderr_thread.join(timeout=2)
 
     # -- 内部
+    def _drain_stderr(self) -> None:
+        stream = self.proc.stderr if self.proc else None
+        if not stream:
+            return
+        try:
+            for line in stream:
+                self._stderr_tail.append(line.rstrip("\n"))
+        except (ValueError, OSError):
+            pass
+
+    def _stderr_text(self) -> str:
+        return "\n".join(self._stderr_tail)
     def _notify(self, method: str, params: dict | None = None) -> None:
         assert self.proc and self.proc.stdin
         self.proc.stdin.write(json.dumps({"jsonrpc": "2.0", "method": method, "params": params or {}}) + "\n")
@@ -83,8 +104,8 @@ class McpClient:
         self.proc.stdin.flush()
         line = self.proc.stdout.readline()
         if not line:
-            err = self.proc.stderr.read() if self.proc.stderr else ""
-            raise McpError(f"MCP 服务端无响应（{method}）；stderr:\n{err}")
+            err = self._stderr_text()
+            raise McpError(f"MCP 服务端无响应（{method}）；stderr 尾部:\n{err}")
         msg = json.loads(line)
         if "error" in msg:
             raise McpError(f"{method} 失败：{msg['error']}")

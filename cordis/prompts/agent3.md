@@ -106,13 +106,18 @@ summary: "一句话摘要"
 experiment_ref: "<experiment_id 或 null>"
 data_source: "synthetic"
 word_count: <数字>
-compliance: "合成数据已标注；无个股代码；无收益承诺"
+compliance:
+  checked: true
+  ok: true
+  violation_count: 0
+  warnings: []
 generated_by: "agent3-writing"
 render_path: "degraded-markdown"
 ---
 ```
 
 front matter 之后才是 `# 标题` 与正文，正文结尾按上文第五节写 `---`、实验 ID、风险提示。
+**只有素材包给了 `experiment_id` 才写「实验 ID：…」这一行；没有就只写风险提示，不要写「实验 ID：无」这种占位行。**
 
 ## A2. 固定的免责与数据声明（逐字）
 
@@ -120,7 +125,7 @@ front matter 之后才是 `# 标题` 与正文，正文结尾按上文第五节�
 
 > 本文仅为个人研究记录，不构成任何投资建议。市场有风险，决策需独立。
 
-当 `data_source: "synthetic"`（当前数据快照就是合成样本），正文里必须逐字出现：
+当 `data_source: "synthetic"` 时，正文里必须逐字出现：
 
 > 前期回测基于合成数据，仅用于验证研究链路，不代表真实市场表现，不构成任何策略有效性证据。
 

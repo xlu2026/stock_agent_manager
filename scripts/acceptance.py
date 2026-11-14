@@ -209,19 +209,35 @@ def check_isolation() -> dict:
 
     quant_yml = read_profile("quant")
     writing_yml = read_profile("writing")
+    agent2_yml = read_profile("agent2")
     quant_has_srq = "serverName: srq" in quant_yml
+    quant_research_toolset = "--toolset" in quant_yml and "research" in quant_yml
     writing_has_srq = "serverName: srq" in writing_yml
     writing_has_draft = "serverName: draft" in writing_yml
+    agent2_has_data = "serverName: data" in agent2_yml
+    agent2_no_quant = "serverName: srq" not in agent2_yml and "serverName: draft" not in agent2_yml
     shell_off = "tool-pwsh" in writing_yml and "disabled: true" in writing_yml
+    agent2_shell_off = "tool-pwsh" in agent2_yml and "disabled: true" in agent2_yml
     installed = os.path.exists(os.path.join(home, "quant", "cordis.patch.yml"))
     return _check(
         "6. 工具面不交叉（量化 MCP 只在 quant 侧注册）",
-        quant_has_srq and not writing_has_srq and writing_has_draft and shell_off,
+        quant_has_srq
+        and quant_research_toolset
+        and not writing_has_srq
+        and writing_has_draft
+        and shell_off
+        and agent2_has_data
+        and agent2_no_quant
+        and agent2_shell_off,
         {
             "quant_has_srq": quant_has_srq,
+            "quant_research_toolset": quant_research_toolset,
             "writing_has_srq": writing_has_srq,
             "writing_has_draft_server": writing_has_draft,
             "writing_shell_disabled": shell_off,
+            "agent2_has_data_server": agent2_has_data,
+            "agent2_has_no_quant_tools": agent2_no_quant,
+            "agent2_shell_disabled": agent2_shell_off,
             "installed_profiles_checked": installed,
             "profiles_dir": home,
         },
@@ -259,7 +275,7 @@ def check_profile_drift() -> dict:
     """已安装 profile 必须与仓库生成物一致，防止手改后与仓库漂移。"""
     home = os.path.join(os.path.expanduser("~"), ".dsh", "profiles")
     missing, drifted = [], []
-    for name in ("quant", "writing"):
+    for name in ("quant", "writing", "agent2"):
         installed_path = os.path.join(home, name, "cordis.patch.yml")
         if not os.path.exists(installed_path):
             missing.append(name)
@@ -274,6 +290,35 @@ def check_profile_drift() -> dict:
         "8. 已安装 profile 与仓库生成物一致（无手改漂移）",
         not missing and not drifted,
         {"missing": missing, "drifted": drifted, "profiles_dir": home},
+    )
+
+
+def check_publish_desk() -> dict:
+    """发布台只读聚合可用，且没有浏览器/发布面。"""
+    from writing import publishing
+
+    data = publishing.scan()
+    sources = [
+        os.path.join(ROOT, "writing", "publishing.py"),
+        os.path.join(ROOT, "scripts", "publish.py"),
+    ]
+    hits = []
+    for path in sources:
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+        for token in ("freepublish", "playwright", "selenium", "webbrowser"):
+            if token in text:
+                hits.append({"file": os.path.relpath(path, ROOT), "token": token})
+    ok = bool(data.get("articles")) and not hits
+    return _check(
+        "13. 发布台（status 只读，无浏览器/发布面）",
+        ok,
+        {
+            "articles": data.get("summary", {}).get("total"),
+            "wechat_published": data.get("summary", {}).get("wechat_published"),
+            "zhihu_published": data.get("summary", {}).get("zhihu_published"),
+            "forbidden_hits": hits,
+        },
     )
 
 
@@ -301,6 +346,77 @@ def check_strategy_doc() -> dict:
             "missing_factors": missing_factors,
             "engine_version_in_doc": has_engine,
             "spec_version_in_doc": has_spec_version,
+        },
+    )
+
+
+def check_prompt_consistency() -> dict:
+    """提示词必须与当前数据模式/工具面一致，防止回退到“只有合成样本”的旧说法。"""
+    texts = {}
+    for name in ("agent1", "agent2", "agent3"):
+        path = os.path.join(ROOT, "cordis", "prompts", f"{name}.md")
+        with open(path, encoding="utf-8-sig") as fh:
+            texts[name] = fh.read()
+    a1, a2, a3 = texts["agent1"], texts["agent2"], texts["agent3"]
+    ok = (
+        "synthetic_40" in a1
+        and "沪深300" in a1
+        and "run_research_instruction" in a1
+        and "唯一该调用" not in a1
+        and "cancel_job" in a2
+        and "cleanup_jobs" in a2
+        and "wait_seconds" in a2
+        and "当前数据快照就是合成样本" not in a3
+    )
+    return _check(
+        "11. 提示词与当前数据模式/工具面一致",
+        ok,
+        {
+            "agent1_mentions_real": "沪深300" in a1,
+            "agent1_mentions_synthetic": "synthetic_40" in a1,
+            "agent1_old_unique_entry_removed": "唯一该调用" not in a1,
+            "agent2_mentions_cancel": "cancel_job" in a2,
+            "agent2_mentions_cleanup": "cleanup_jobs" in a2,
+            "agent3_stale_synthetic_line_removed": "当前数据快照就是合成样本" not in a3,
+        },
+    )
+
+
+def check_research_guard() -> dict:
+    """研究模式不暴露原始 spec 工具，且 run_research_instruction 真的会校验。"""
+    from quant.mcp_server import build_server
+
+    server = build_server("research")
+    names = {t["name"] for t in server.tools}
+    exp_root = os.path.join(ROOT, "experiments")
+    before = {f for f in os.listdir(exp_root) if f.startswith("exp-") and f.endswith(".json")}
+    result = server.tool_map["run_research_instruction"](
+        {
+            "question": "预热校验",
+            "universe": "synthetic_40",
+            "period": "2019-01-02~2024-12-31",
+            "factor_logic": "动量延续",
+        }
+    )
+    after = {f for f in os.listdir(exp_root) if f.startswith("exp-") and f.endswith(".json")}
+    failures = [c["id"] for c in result.get("failures", [])]
+    ok = (
+        "run_backtest" not in names
+        and "validate_strategy" not in names
+        and result.get("ok") is False
+        and result.get("stage") == "validation"
+        and "factor.warmup" in failures
+        and before == after
+    )
+    return _check(
+        "12. 研究入口不暴露原始 spec，且校验先于登记",
+        ok,
+        {
+            "research_tools": sorted(names),
+            "rejected": result.get("ok") is False,
+            "stage": result.get("stage"),
+            "failures": failures,
+            "experiments_unchanged": before == after,
         },
     )
 
@@ -353,6 +469,9 @@ def main() -> int:
         check_profile_drift(),
         check_broker(),
         check_strategy_doc(),
+        check_prompt_consistency(),
+        check_research_guard(),
+        check_publish_desk(),
     ]
     ok = all(c["ok"] for c in checks)
     payload = {

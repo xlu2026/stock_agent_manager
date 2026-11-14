@@ -43,8 +43,8 @@
 
 - `quant/` 量化内核（确定性引擎 + MCP 服务端）。写作侧不得 import。
 - `writing/` 写作侧（渲染 + 合规 + 草稿客户端）。**不得 import `quant`**。
-- `agents/` 编排层：Agent 1 只用 MCP 工具；Agent 3 没有任何量化工具。
-- `cordis/prompts/` 两个 Agent 的系统提示词，是唯一来源；改完跑 `tools/build_cordis.py`。
+- `agents/` 编排层：Agent 1 只用 MCP 工具；Agent 2 只管数据刷新；Agent 3 没有任何量化工具。
+- `cordis/prompts/` 三个 Agent 的系统提示词，是唯一来源；改完跑 `tools/build_cordis.py`。
 - `experiments/`、`output/` 运行时产物。
 
 ## 写作路径
@@ -62,7 +62,33 @@
 - 推送与记账走仓库脚本：`push_draft.py --category`（封面按栏目取）、`mark_published.py`（发布回写）、
   `commit_articles.py`（提交工作区）。`output/reports/drafts.jsonl` 是草稿位置的权威账本。
 - 每篇成文在 front matter 记 `brief_ref`，指向它对应的简报；没有简报的（口述稿）如实留空。
+- 文件名统一 `[栏目_编号] <date>-<slug>.md`：Agent 3 落盘后跑 `scripts\rename_articles.py`（幂等）。
 - 存量例外：2026-11-09 之前成文的 002、003、AI技术 002 由主会话写成，不追溯。
+
+## 量化链路统一入口
+
+- **所有登记实验（产出 `experiment_id` 的回测）必须走 Agent 1**：`agents/agent1.py`
+  或 `scripts/run_agent1.py`，以及 `dsh --profile quant`。不要用 `quant.engine.run_backtest`
+  直接登记实验——否则校验（预热、区间、数据版本）、实验记录、数据指纹会和 Agent 1 不同步。
+- 真实数据用 `--data-dir` 指向快照，`universe` 写 `沪深300`（映射到 `hs300_40_pit`）；
+  示例见 `examples/research_instruction_hs300.json`。Agent 2 刷新成功后会把最新快照写到
+  `output/data/latest.json`，Agent 1 可以直接用 `--latest`。用 `dsh --profile quant` 时，
+  先在同一环境里设 `NFR_DATA_DIR` 指向快照（MCP 服务端会继承）。
+- 诊断/对照（不登记实验，如 `scripts/compare_datasets.py`）可以直接调引擎，
+  但不能绕过 Agent 1 的校验去下"策略有效"的结论。
+
+## 数据刷新路径（Agent 2）
+
+- **取数不是 Agent 1 的事。** 新数据由 Agent 2（`dsh --profile agent2`）刷新：它只挂
+  `quant.data_mcp` 的六个工具（`list_snapshots / refresh_snapshot / refresh_status /
+  cancel_job / cleanup_jobs / check_snapshot`），没有回测、没有下单、没有 shell。
+- 刷新是后台作业：`refresh_snapshot` 返回 `job_id`，必须用 `refresh_status` 轮询到 `succeeded/failed`。
+- 环境变量：`NFR_SNAPSHOT_ROOT`、`NFR_BAOSTOCK_PYTHON`（必需）、`NFR_EXPORT_SCRIPT`、
+  `NFR_DATA_JOB_DIR`；也可以写在 `config/agent2.json`（已 gitignore，示例见
+  `config/agent2.example.json`），环境变量优先。
+- 铁律：**不覆盖已有快照**（每次新目录、全 ASCII 路径）；刷新成功后 Agent 2 会更新
+  `output/data/latest.json` 指针，Agent 1 用 `--latest` 接上（也可以继续显式传 `--data-dir`）。
+- 没有 Agent 2 会话时，人工入口是 `scripts\refresh_and_run.ps1` 或导出脚本，规则相同。
 
 ## 修改后必须跑
 

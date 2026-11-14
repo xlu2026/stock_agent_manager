@@ -22,10 +22,13 @@
       "detail": {
         "tools": [
           "run_research_instruction",
+          "run_research_factor_analysis",
+          "run_research_paper_session",
           "run_backtest",
           "validate_strategy",
           "list_experiments",
           "get_experiment",
+          "get_experiment_holdings",
           "run_factor_analysis",
           "run_paper_session",
           "broker_account",
@@ -93,9 +96,13 @@
       "ok": true,
       "detail": {
         "quant_has_srq": true,
+        "quant_research_toolset": true,
         "writing_has_srq": false,
         "writing_has_draft_server": true,
         "writing_shell_disabled": true,
+        "agent2_has_data_server": true,
+        "agent2_has_no_quant_tools": true,
+        "agent2_shell_disabled": true,
         "installed_profiles_checked": true,
         "profiles_dir": "C:\\Users\\ADMIN\\.dsh\\profiles"
       }
@@ -137,6 +144,52 @@
         "missing_factors": [],
         "engine_version_in_doc": true,
         "spec_version_in_doc": true
+      }
+    },
+    {
+      "check": "11. 提示词与当前数据模式/工具面一致",
+      "ok": true,
+      "detail": {
+        "agent1_mentions_real": true,
+        "agent1_mentions_synthetic": true,
+        "agent1_old_unique_entry_removed": true,
+        "agent2_mentions_cancel": true,
+        "agent2_mentions_cleanup": true,
+        "agent3_stale_synthetic_line_removed": true
+      }
+    },
+    {
+      "check": "12. 研究入口不暴露原始 spec，且校验先于登记",
+      "ok": true,
+      "detail": {
+        "research_tools": [
+          "broker_account",
+          "broker_orders",
+          "broker_propose_order",
+          "broker_submit_order",
+          "get_experiment",
+          "get_experiment_holdings",
+          "list_experiments",
+          "run_research_factor_analysis",
+          "run_research_instruction",
+          "run_research_paper_session"
+        ],
+        "rejected": true,
+        "stage": "validation",
+        "failures": [
+          "factor.warmup"
+        ],
+        "experiments_unchanged": true
+      }
+    },
+    {
+      "check": "13. 发布台（status 只读，无浏览器/发布面）",
+      "ok": true,
+      "detail": {
+        "articles": 13,
+        "wechat_published": 7,
+        "zhihu_published": 1,
+        "forbidden_hits": []
       }
     }
   ]

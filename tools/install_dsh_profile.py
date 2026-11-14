@@ -1,4 +1,4 @@
-"""把仓库里的 Phase 1 配置安装成两个 DSH profile（quant / writing）。
+"""把仓库里的 Phase 1 配置安装成三个 DSH profile（quant / writing / agent2）。
 
     python tools/build_cordis.py        # 先由提示词生成 cordis/profiles/*.yml
     python tools/install_dsh_profile.py [--profiles-dir DIR] [--dry-run]
@@ -7,9 +7,10 @@
 
     dsh --profile quant   "跑一次动量因子回测"
     dsh --profile writing "把这份简报写成公众号草稿"
+    dsh --profile agent2  "用上一份快照拉最新行情"
 
-两个 profile 的差别就是能力面：quant 的 patch 里插入了 srq MCP 服务端，
-writing 的 patch 里没有任何 MCP 行，因此写作会话的工具表里不存在 mcp__srq__*。
+三个 profile 的差别就是能力面：quant 插入了 srq MCP，writing 没有任何 MCP 行，
+agent2 只插入 data MCP（刷新快照、体检），没有回测工具。
 """
 from __future__ import annotations
 
@@ -31,6 +32,10 @@ PROFILES = {
     "writing": {
         "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-headless"],
         "note": "Agent 3 公众号写作：不注册任何 MCP 服务端，工具表无量化工具",
+    },
+    "agent2": {
+        "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-headless"],
+        "note": "Agent 2 数据运维：注册 data MCP，只刷新/体检快照，不跑回测",
     },
 }
 

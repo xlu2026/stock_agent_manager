@@ -126,9 +126,27 @@ def check_snapshot(dir_path: str) -> dict:
     per_asset = defaultdict(set)
     for r in prices:
         per_asset[r["asset"]].add(r["date"])
+
+    # 时点成分：给了 universe.csv 时，覆盖率的分母只算"该标的属于成分"的交易日。
+    # 否则退市/调出的标的会被误判成"缺了 80% 的数据"。
+    uni_path = os.path.join(dir_path, "universe.csv")
+    uni_rows = _read_csv(uni_path) if os.path.exists(uni_path) else []
+    uni_members = defaultdict(set)
+    for r in uni_rows:
+        if r.get("date") and r.get("asset"):
+            uni_members[r["date"]].add(r["asset"])
+
     holes = {}
+    never_in_universe = []
     for asset in assets:
-        missing = 1 - len(per_asset[asset] & set(expected_dates)) / len(expected_dates)
+        if uni_members:
+            expected_asset = {d for d in expected_dates if asset in uni_members.get(d, ())}
+            if not expected_asset:
+                never_in_universe.append(asset)
+                continue
+        else:
+            expected_asset = set(expected_dates)
+        missing = 1 - len(per_asset[asset] & expected_asset) / len(expected_asset)
         if missing > 0:
             holes[asset] = round(missing, 4)
     worst = max(holes.values()) if holes else 0.0
@@ -137,13 +155,18 @@ def check_snapshot(dir_path: str) -> dict:
         checks.append(
             _fail(
                 "prices.coverage",
-                f"最差标的 {worst_asset} 缺失 {worst:.1%} 的交易日（上限 {MAX_MISSING_RATIO:.0%}，分母={len(expected_dates)} 天）",
+                f"最差标的 {worst_asset} 缺失 {worst:.1%} 的交易日（上限 {MAX_MISSING_RATIO:.0%}，"
+                f"分母={'成分有效期' if uni_members else '交易日历'}）",
             )
         )
     elif worst > SUSPENSION_HINT_RATIO:
         checks.append(_warn("prices.coverage", f"存在缺失，最差 {worst:.1%}，请确认是否停牌"))
     else:
         checks.append(_pass("prices.coverage", f"{len(assets)} 个标的 × {len(expected_dates)} 个交易日"))
+    if never_in_universe:
+        checks.append(
+            _warn("prices.universe", f"{len(never_in_universe)} 个标的从未出现在成分里：{never_in_universe[:3]}")
+        )
 
     # 4) 日历一致性：行情里出现了日历之外的日期
     if calendar_dates:
@@ -195,9 +218,7 @@ def check_snapshot(dir_path: str) -> dict:
 
     # 7) 时点成分：日期要全覆盖，标的不许越界
     #    "某天没有成分行"不等于"当天空池"——前者是数据没导全，后者会让回测凭空空仓。
-    uni_path = os.path.join(dir_path, "universe.csv")
-    if os.path.exists(uni_path):
-        uni_rows = _read_csv(uni_path)
+    if uni_rows:
         uni_dates = {r["date"] for r in uni_rows if r.get("date")}
         uni_assets = {r["asset"] for r in uni_rows if r.get("asset")}
         unknown = sorted(uni_assets - set(assets))

@@ -1,7 +1,7 @@
 r"""把一篇已完成的 Markdown 文章推进公众号草稿箱。
 
-    python scripts/push_draft.py --file C:\AI_workspace\wechat_writing\articles\2026-11-07-opening.md --dry-run
-    python scripts/push_draft.py --file C:\AI_workspace\wechat_writing\articles\2026-11-07-opening.md --thumb-media-id <素材ID>
+    python scripts/push_draft.py --file C:\AI_workspace\wechat_writing\articles\[杂项_001] 2026-11-07-opening.md --dry-run
+    python scripts/push_draft.py --file C:\AI_workspace\wechat_writing\articles\[杂项_001] 2026-11-07-opening.md --thumb-media-id <素材ID>
 
 边界：只调 draft/add，写进草稿箱就停。**没有 freepublish，也没有任何发布函数**——
 发布必须由人在公众号后台手动点击。

@@ -18,6 +18,21 @@ OUT_PROFILES = os.path.join(ROOT, "cordis", "profiles")
 
 REPO = ROOT.replace("\\", "/")
 GEN = "# 由 tools/build_cordis.py 生成；不要手改，改 cordis/prompts/*.md 后重新生成。\n"
+WECHAT_WORKSPACE = "C:/AI_workspace/wechat_writing"
+
+
+def workspace_row(root: str) -> str:
+    """把 sandbox 的工作区钉死在指定目录，避免从别的 cwd 启动时越界。
+
+    config 是整体替换而不是深合并，所以必须把 base 的三个字段都抄全。
+    """
+    return (
+        "- id: sandbox-policy\n"
+        "  config:\n"
+        "    mode: !!js process.env.DSH_PERMISSION_MODE ?? 'workspace-write'\n"
+        f"    workspaceRoot: '{root}'\n"
+        "    additionalWritableRoots: !!js ctx.headlessStartup.additionalWritableRoots\n"
+    )
 
 # 两个 Agent 都不需要的能力：Phase 1 不做 subagent、不做常驻任务、不联网、不改工作区。
 # 关掉的是"工具行"，服务行保留，否则会连带打断组合。
@@ -50,6 +65,8 @@ SRQ_ROW = f"""\
       - 'quant.cli'
       - 'mcp'
       - 'serve'
+      - '--toolset'
+      - 'research'
     cwd: '{REPO}'
     failOnStartupError: true
     toolCallTimeoutMs: 120000
@@ -68,6 +85,21 @@ DRAFT_ROW = f"""\
     cwd: '{REPO}'
     failOnStartupError: true
     toolCallTimeoutMs: 60000
+"""
+
+DATA_ROW = f"""\
+- id: mcp-data
+  name: '@deepseek-ai/dsh-mcp-client'
+  config:
+    serverName: data
+    transport: stdio
+    command: python
+    args:
+      - '-m'
+      - 'quant.data_mcp'
+    cwd: '{REPO}'
+    failOnStartupError: true
+    toolCallTimeoutMs: 120000
 """
 
 COMPACT = """\
@@ -124,7 +156,7 @@ def indent(text: str, by: int = 4) -> str:
 
 
 def build_presets() -> str:
-    a1, a3 = read_prompt("agent1"), read_prompt("agent3")
+    a1, a2, a3 = read_prompt("agent1"), read_prompt("agent2"), read_prompt("agent3")
     body: list[str] = [
         "- id: agent-preset-registry\n",
         "  name: '@deepseek-ai/dsh-agent-preset-registry'\n",
@@ -153,29 +185,46 @@ def build_presets() -> str:
         "      - id: time-context\n        name: '@deepseek-ai/dsh-time-context'\n",
         indent(DRAFT_ROW, 6),
         indent(COMPACT, 6),
+        "\n- id: preset-data-ops\n  name: '@deepseek-ai/dsh-agent-preset'\n  config:\n",
+        "    id: data-ops\n",
+        "    name: 数据运维 Agent 2\n",
+        "    description: 刷新真实行情快照（baostock），后台作业 + 体检。不跑回测。\n",
+        "    order: 3\n    plugins:\n",
+        "      - id: persona\n        name: '@deepseek-ai/dsh-persona'\n        config:\n          prefix: |\n",
+        block_scalar(a2, 12) + "\n",
+        indent(PRESET_FS_ROWS, 6),
+        "      - id: agent-instructions\n        name: '@deepseek-ai/dsh-agent-instructions'\n        config:\n          maxBytes: 65536\n",
+        "      - id: time-context\n        name: '@deepseek-ai/dsh-time-context'\n",
+        indent(DATA_ROW, 6),
+        indent(COMPACT, 6),
     ]
     inner = "".join(body)
     header = GEN + (
-        "# Phase 1 的两套 Agent 能力面（preset 形态，仅 Web 表面支持按会话选择）。\n"
+        "# Phase 1 的三套 Agent 能力面（preset 形态，仅 Web 表面支持按会话选择）。\n"
         "# 以 insert 形式提供：patch 层只能按 id 覆盖已有条目，新增条目必须放进 insert。\n"
         "# 一次性 headless 入口不消费 preset，那种场景用 cordis/profiles/*.yml 做 profile 级隔离。\n"
     )
     return header + "- insert:\n" + indent(inner, 4)
 
 
-def build_profile(name: str, prompt_name: str, with_mcp: str) -> str:
-    """with_mcp: 'srq' | 'draft'。"""
+def build_profile(name: str, prompt_name: str, with_mcp: str, workspace: str = "") -> str:
+    """with_mcp: 'srq' | 'draft' | 'data'。workspace 为空则不固定工作区。"""
     rows = [
         GEN,
         "# profile 级 patch：一次性 headless 入口不看 preset，能力面在这里用 profile 隔离。\n",
         "- id: system-prompt\n  config:\n    personaPrefix: |\n",
         block_scalar(read_prompt(prompt_name), 6) + "\n",
+        "\n# 当前时间：Agent 2 要用当天日期命名快照目录，不能靠猜\n",
+        "- id: time-context\n  name: '@deepseek-ai/dsh-time-context'\n",
         "\n# 关闭 Phase 1 用不到的工具面（shell / subagent / workflow / web / 插件管理）\n",
     ]
     for t in DISABLED_TOOLS:
         rows.append(f"- id: {t}\n  disabled: true\n")
+    if workspace:
+        rows.append(f"\n# 固定工作区：无论从哪个 cwd 启动，都只能在这个根下读写\n{workspace_row(workspace)}")
     rows.append("\n- insert:\n")
-    rows.append(indent(SRQ_ROW if with_mcp == "srq" else DRAFT_ROW, 4))
+    mcp_row = {"srq": SRQ_ROW, "draft": DRAFT_ROW, "data": DATA_ROW}[with_mcp]
+    rows.append(indent(mcp_row, 4))
     return "".join(rows)
 
 
@@ -183,8 +232,12 @@ def main() -> int:
     os.makedirs(OUT_PROFILES, exist_ok=True)
     with open(OUT_PRESETS, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(build_presets())
-    for name, prompt_name, mcp in (("quant", "agent1", "srq"), ("writing", "agent3", "draft")):
-        text = build_profile(name, prompt_name, mcp)
+    for name, prompt_name, mcp, workspace in (
+        ("quant", "agent1", "srq", REPO),
+        ("writing", "agent3", "draft", WECHAT_WORKSPACE),
+        ("agent2", "agent2", "data", REPO),
+    ):
+        text = build_profile(name, prompt_name, mcp, workspace)
         path = os.path.join(OUT_PROFILES, f"{name}.yml")
         with open(path, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(text)

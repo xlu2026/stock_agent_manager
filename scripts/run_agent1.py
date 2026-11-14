@@ -36,6 +36,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--universe")
     ap.add_argument("--period")
     ap.add_argument("--factor_logic", "--factor-logic", dest="factor_logic")
+    ap.add_argument("--data-dir", help="快照目录（真实数据）；不传则用仓库默认合成样本")
+    ap.add_argument("--latest", action="store_true", help="使用 Agent 2 写的最新快照指针")
+    ap.add_argument("--internal-spec", action="store_true", help="诊断用：允许直接传内部 spec（绕过四字段契约）")
     ap.add_argument("--out", help="信封输出路径")
     args = ap.parse_args(argv)
 
@@ -54,7 +57,20 @@ def main(argv: list[str] | None = None) -> int:
         }
 
     out = args.out or os.path.join(REPORTS, "agent1_latest.json")
-    env = run(instruction, out)
+    data_dir = args.data_dir
+    if args.latest:
+        if data_dir:
+            ap.error("--data-dir 和 --latest 只能用一个")
+        from quant.data_pointer import read_pointer
+
+        try:
+            pointer = read_pointer()
+        except (FileNotFoundError, ValueError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        data_dir = pointer["dir"]
+        print(f"使用最新快照 {pointer['data_version']}：{data_dir}", file=sys.stderr)
+    env = run(instruction, out, data_dir=data_dir, internal_spec=args.internal_spec)
     print(json.dumps(env, ensure_ascii=False, indent=2))
     print(f"\n信封已写入 {rel(out)}" if out else "", file=sys.stderr)
     return 0 if env["status"] == "ok" else 2

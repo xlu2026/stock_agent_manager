@@ -34,6 +34,35 @@ def _atomic_write(path: str, text: str) -> None:
     os.replace(tmp, path)
 
 
+def _private_dir() -> str:
+    return os.path.join(exp_dir(), ".private")
+
+
+def _split_holdings(holdings: list[dict]) -> tuple[list[dict], list[dict]]:
+    """公开记录里去掉个股代码，代码只留在 .private/ 下。"""
+    public, private = [], []
+    for row in holdings or []:
+        names = row.get("names") or []
+        public.append({k: v for k, v in row.items() if k != "names"})
+        private.append({"date": row.get("date"), "names": names})
+    return public, private
+
+
+def _write_private(experiment_id: str, holdings: list[dict], now: str) -> str | None:
+    if not holdings:
+        return None
+    os.makedirs(_private_dir(), exist_ok=True)
+    path = os.path.join(_private_dir(), f"{experiment_id}.json")
+    payload = {
+        "experiment_id": experiment_id,
+        "written_utc": now,
+        "note": "仅内部使用：含个股代码，不得进入公开输出",
+        "holdings": holdings,
+    }
+    _atomic_write(path, json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+    return path
+
+
 def save(bt: Backtest) -> dict:
     os.makedirs(exp_dir(), exist_ok=True)
     path = os.path.join(exp_dir(), f"{bt.experiment_id}.json")
@@ -44,6 +73,7 @@ def save(bt: Backtest) -> dict:
         with open(path, encoding="utf-8") as fh:
             existing = json.load(fh)
 
+    public_holdings, private_holdings = _split_holdings(bt.holdings)
     record = {
         "experiment_id": bt.experiment_id,
         "first_recorded_utc": existing["first_recorded_utc"] if existing else now,
@@ -55,11 +85,13 @@ def save(bt: Backtest) -> dict:
         "metrics": bt.metrics,
         "provenance": bt.provenance,
         "rebalance_days": bt.rebalance_days,
-        "holdings": bt.holdings,
+        "holdings": public_holdings,
+        "holdings_redacted": True,
         "nav_series": {"dates": bt.dates, "nav": bt.nav},
         "benchmark_series": {"dates": bt.dates, "nav": bt.benchmark_nav},
     }
     _atomic_write(path, json.dumps(record, ensure_ascii=False, indent=2) + "\n")
+    _write_private(bt.experiment_id, private_holdings, now)
 
     if not existing:
         with open(index_path(), "a", encoding="utf-8") as fh:
@@ -109,3 +141,28 @@ def get_experiment(experiment_id: str, include_series: bool = True) -> dict:
         rec.pop("benchmark_series", None)
         rec.pop("holdings", None)
     return rec
+
+
+def get_experiment_holdings(experiment_id: str, date: str | None = None) -> dict:
+    """读取内部持仓明细（含个股代码）。只给 Agent 1 做订单草案用，不得对外。"""
+    if not experiment_id.startswith("exp-") or "/" in experiment_id or ".." in experiment_id:
+        raise ValueError(f"非法 experiment_id {experiment_id!r}")
+    path = os.path.join(_private_dir(), f"{experiment_id}.json")
+    if not os.path.exists(path):
+        raise KeyError(
+            f"{experiment_id} 没有内部持仓明细；可能是脱敏前的旧记录，"
+            "或者该实验没有持仓"
+        )
+    with open(path, encoding="utf-8") as fh:
+        payload = json.load(fh)
+    rows = payload.get("holdings") or []
+    if date:
+        rows = [r for r in rows if r.get("date") == date]
+        if not rows:
+            raise KeyError(f"{experiment_id} 在 {date} 没有持仓记录")
+    return {
+        "experiment_id": experiment_id,
+        "note": payload.get("note") or "仅内部使用：含个股代码，不得进入公开输出",
+        "count": len(rows),
+        "holdings": rows,
+    }

@@ -1,0 +1,6 @@
+{
+  "baostock_python": "C:\\Users\\<you>\\AppData\\Local\\Programs\\xtp_rich_client\\bin\\cpython\\python.exe",
+  "snapshot_root": "C:\\AI_workspace\\smartx_client\\out",
+  "export_script": "C:\\AI_workspace\\stock_agent_manager\\scripts\\export_baostock_snapshot.py",
+  "job_dir": "C:\\AI_workspace\\stock_agent_manager\\output\\data_jobs"
+}

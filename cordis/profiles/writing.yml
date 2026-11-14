@@ -111,13 +111,18 @@
       experiment_ref: "<experiment_id 或 null>"
       data_source: "synthetic"
       word_count: <数字>
-      compliance: "合成数据已标注；无个股代码；无收益承诺"
+      compliance:
+        checked: true
+        ok: true
+        violation_count: 0
+        warnings: []
       generated_by: "agent3-writing"
       render_path: "degraded-markdown"
       ---
       ```
 
       front matter 之后才是 `# 标题` 与正文，正文结尾按上文第五节写 `---`、实验 ID、风险提示。
+      **只有素材包给了 `experiment_id` 才写「实验 ID：…」这一行；没有就只写风险提示，不要写「实验 ID：无」这种占位行。**
 
       ## A2. 固定的免责与数据声明（逐字）
 
@@ -125,7 +130,7 @@
 
       > 本文仅为个人研究记录，不构成任何投资建议。市场有风险，决策需独立。
 
-      当 `data_source: "synthetic"`（当前数据快照就是合成样本），正文里必须逐字出现：
+      当 `data_source: "synthetic"` 时，正文里必须逐字出现：
 
       > 前期回测基于合成数据，仅用于验证研究链路，不代表真实市场表现，不构成任何策略有效性证据。
 
@@ -141,6 +146,10 @@
       ## A4. 素材包里没有 `title`
 
       标题由你根据 `research_question` 与 `user_notes` 自己拟，≤20 字，冷静克制。若 `user_notes` 为空或与 `research_question` 无实质关联，按“素材不足，需补充：user_notes”处理。
+
+# 当前时间：Agent 2 要用当天日期命名快照目录，不能靠猜
+- id: time-context
+  name: '@deepseek-ai/dsh-time-context'
 
 # 关闭 Phase 1 用不到的工具面（shell / subagent / workflow / web / 插件管理）
 - id: tool-bash
@@ -171,6 +180,13 @@
   disabled: true
 - id: tool-working-directory
   disabled: true
+
+# 固定工作区：无论从哪个 cwd 启动，都只能在这个根下读写
+- id: sandbox-policy
+  config:
+    mode: !!js process.env.DSH_PERMISSION_MODE ?? 'workspace-write'
+    workspaceRoot: 'C:/AI_workspace/wechat_writing'
+    additionalWritableRoots: !!js ctx.headlessStartup.additionalWritableRoots
 
 - insert:
     - id: mcp-wechat-draft
