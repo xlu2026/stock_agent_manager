@@ -147,6 +147,14 @@ def strip_h1(body: str) -> str:
     return _H1_RE.sub("", body, count=1).lstrip("\n")
 
 
+def compose_body(body: str) -> str:
+    """拼出知乎正文：去 H1、补首发句。front matter 变化不影响这个结果。"""
+    text = strip_h1(body).rstrip("\n")
+    if ORIGIN_MARKER not in text:
+        text = f"{text}\n\n{ORIGIN_LINE}"
+    return text + "\n"
+
+
 # --------------------------------------------------------------- HTML
 
 
@@ -280,6 +288,7 @@ def build_meta(
     cover: str | None,
     source: str,
     source_sha256: str,
+    body_sha256: str,
     compliance: dict,
 ) -> dict:
     return {
@@ -295,6 +304,7 @@ def build_meta(
         "cover": cover,
         "source": _source_display(source),
         "source_sha256": source_sha256,
+        "body_sha256": body_sha256,
         "exported_at": datetime.now(CST).isoformat(timespec="seconds"),
         "status": "exported",
         "canonical": None,
@@ -358,10 +368,7 @@ def export_article(path: str, *, out_dir: str | None = None) -> dict:
     if not compliance["ok"]:
         raise ExportRejected(compliance)
 
-    zhihu_markdown = strip_h1(body).rstrip("\n")
-    if ORIGIN_MARKER not in zhihu_markdown:
-        zhihu_markdown = f"{zhihu_markdown}\n\n{ORIGIN_LINE}"
-    zhihu_markdown += "\n"
+    zhihu_markdown = compose_body(body)
     html_out = markdown_to_html(zhihu_markdown)
 
     date = _date_of(front, path)
@@ -386,6 +393,7 @@ def export_article(path: str, *, out_dir: str | None = None) -> dict:
         cover=cover_for(front, slug),
         source=path,
         source_sha256=hashlib.sha256(markdown.encode("utf-8")).hexdigest(),
+        body_sha256=hashlib.sha256(zhihu_markdown.encode("utf-8")).hexdigest(),
         compliance=compliance,
     )
     if os.path.exists(meta_path):

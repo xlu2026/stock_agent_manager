@@ -1,6 +1,9 @@
 # 平台发布（公众号之外）
 
 > 账号矩阵、导出流程与发布记录。当前只接知乎；**导出可以自动，发布永远人工**。
+>
+> 日常发布用 [publishing.md](publishing.md) 的 `publish.py status / prepare / done`；
+> 本文保留平台矩阵、知乎导出细节和记录表。
 
 ## 1. 原则
 

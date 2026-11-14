@@ -1,0 +1,23 @@
+{
+  "wechat": {
+    "original": true,
+    "ai_declaration": "AI辅助创作",
+    "album_by_category": {
+      "量化研究": "量化研究",
+      "AI技术": "AI技术",
+      "市场复盘": "市场复盘",
+      "杂项": ""
+    },
+    "reward": false
+  },
+  "zhihu": {
+    "column": "杂灵根散修录",
+    "ai_declaration": "AI辅助创作",
+    "topics_by_category": {
+      "量化研究": ["量化交易", "回测", "因子模型", "Python"],
+      "AI技术": ["人工智能", "AI Agent", "编程", "软件工程"],
+      "市场复盘": ["宏观经济", "金融市场", "市场分析"],
+      "杂项": ["独立思考", "个人成长", "效率工具"]
+    }
+  }
+}
