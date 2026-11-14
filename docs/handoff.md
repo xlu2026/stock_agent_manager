@@ -3,20 +3,21 @@
 > 给下一个会话的 agent 看的第一份文件。读完这一页，你应该知道：项目在哪一步、
 > 什么不能碰、下一步做什么、以及哪些坑别人已经踩过。
 >
-> 最后更新：2026-11-09 ｜ 对应状态：Phase 1 完成；数据接入改为「CSV 快照」路线
-> （QMT 数据下载受政策限制，见第 7 节）
+> 最后更新：2026-11-14 ｜ 对应状态：Phase 1 完成；数据接入走 baostock/CSV 快照，
+> 执行侧实测为 SmartX CSV 半自动（见第 7 节与 `docs/smartx-execution.md`）
 
 ---
 
 ## 1. 三十秒版本
 
 这是一个个人项目：**用 AI 把投资判断写成可回测因子，并公开记录过程**。
-Phase 1 已经跑通"研究指令 → 确定性回测 → 指标与实验 ID"，以及公众号文章草稿链路。
-**下一步是接真实行情**：v2 契约的消费端和通用 CSV 导入器已经就位，缺的只是
-一份真实日线 CSV。券商 QMT 的数据下载被政策限制，但行情来源与交易通道已经解耦，
-换成任何能导出 CSV 的数据源都不需要改引擎（见第 7 节）。
+Phase 1 已经跑通"研究指令 → 确定性回测 → 指标与实验 ID"，以及公众号文章草稿链路；
+Agent 2 数据刷新、Agent 3 写作、发布台也已落地。
+**下一步是执行适配与组合构建**：真实 baostock 快照已经跑通（`dv-946b080b1258`），
+执行侧停在 SmartX CSV 半自动——能生成 CSV、能自动导出对账，下单确认仍需人工点。
+细节见 `docs/smartx-execution.md`。
 
-当前规模：**110 项单测、11 项验收、MCP 11 个工具**，全绿。
+当前规模：**215 项单测、14 项验收、MCP 14 个工具（research 模式 10 个）+ 6 个 data 工具**，全绿。
 
 ---
 
@@ -28,10 +29,12 @@ Phase 1 已经跑通"研究指令 → 确定性回测 → 指标与实验 ID"，
 | 2 | 本文件 | 当前状态与待办 |
 | 3 | `docs/architecture.md` | 分层、工具面、券商层、数据接入（第 9 节） |
 | 4 | `docs/strategy.md` | 策略规格、参数口径、加因子 checklist |
-| 5 | `README.md` | 快速开始 |
+| 5 | `docs/smartx-execution.md` | 执行侧实测：CSV 下单/撤单、字段对照、未决问题 |
+| 6 | `README.md` | 快速开始 |
+| 7 | `docs/agent-prompt-guide.md` | 给三个 Agent 写提示词的模板与反例 |
 
 公众号账号状态（接口权限、白名单、变现）在 `docs/wechat-account.md`，与本仓库开发解耦。
-公众号之外的平台矩阵、知乎导出与发布记录在 `docs/platforms.md`。
+公众号之外的平台矩阵、知乎导出与发布记录在 `docs/platforms.md`；日常发布流程见 `docs/publishing.md`。
 
 ---
 
@@ -41,34 +44,50 @@ Phase 1 已经跑通"研究指令 → 确定性回测 → 指标与实验 ID"，
 |---|---|---|
 | 确定回测引擎（4 因子、成本、基准、指标、IC） | `quant/engine.py` `quant/factors.py` | ✅ 可复现（`nav_hash`） |
 | 四字段研究指令契约（自然语言 → 因子） | `quant/instruction.py` | ✅ 模型不能自选因子 |
-| MCP 服务端 | `quant/mcp_server.py` | ✅ 11 个工具 |
-| 实验登记簿 | `quant/experiments.py` `experiments/` | ✅ |
+| MCP 服务端 | `quant/mcp_server.py` | ✅ 14 个工具；Agent 1 profile 用 `--toolset research`（10 个） |
+| 实验登记簿 | `quant/experiments.py` `experiments/` | ✅ 公开记录持仓已脱敏；代码在 `experiments/.private/` |
 | 模拟盘 + 券商抽象层 | `quant/paper.py` `quant/broker/` | ✅ 只有 PaperBroker |
 | 下单三段式（提案 → 人工批准 → 提交） | `quant/broker/proposals.py` `approve.py` | ✅ 已实测 |
 | 写作侧（渲染、合规、草稿接口） | `writing/` | ✅ |
 | 知乎导出（HTML/MD/meta，无发布） | `writing/platforms/zhihu.py` `writing/export.py` | ✅ 导出 + 人工清单；文末自动加首发句 |
 | 知乎发布（开篇） | https://zhuanlan.zhihu.com/p/2103182137985976284 | ✅ 2026-11-09 手动发布；AI 声明/首发句/3 话题已核对 |
-| DSH 两套 profile（工具面隔离） | `cordis/` + `tools/build_cordis.py` | ✅ 已实测 |
+| 发布台（状态/卡片/回填） | `writing/publishing.py` `scripts/publish.py` | ✅ 只读聚合 + prepare 卡片 + done 回填，无发布 |
+| DSH 三套 profile（工具面隔离） | `cordis/` + `tools/build_cordis.py` | ✅ quant / writing / agent2 |
 | 数据契约 v2 + 快照体检 + 通用 CSV 导入器 | `quant/providers/` | ✅ 消费端已认 v2，无真实数据 |
-| QMT 只读导出 sidecar（不下载） | `scripts/export_qmt_snapshot.py` | ✅ 骨架 + 假 xtquant 单测，未接真终端 |
+| 真实数据导出（baostock，含时点成分）+ 数据对照 | `scripts/export_baostock_snapshot.py` `scripts/compare_datasets.py` | ✅ 40 只×2019-2024，`dv-632cc7c31340` |
+| Agent 2 数据运维（后台刷新作业 + 体检） | `quant/data_mcp.py` `quant/data_jobs.py` `cordis/profiles/agent2.yml` | ✅ 6 个工具，不跑回测 |
+| QMT 只读导出 sidecar（不下载） | `scripts/export_qmt_snapshot.py` | ⚠️ 个人 QMT 已停，脚本保留备查 |
+| SmartX CSV 执行链路（下单/撤单实测） | `docs/smartx-execution.md` | ✅ 半自动；确认框人工，导出自动 |
+| SmartX 自动导出对账 | `quant/broker/smartx_export.py` `scripts/reconcile_smartx.py` | ✅ 6 个 CSV 解析 + rowId 对账 + 归档 |
+| SmartX 下单 CSV 生成 | `quant/broker/smartx_csv.py` `scripts/make_smartx_csv.py` `scripts/fetch_quotes.py` | ✅ 不复权报价 + 提案→CSV；不提交 |
 | 策略规格文档 | `docs/strategy.md` | ✅ v1.0 |
 
 ---
 
 ## 4. 未完成 / 下一步
 
+**统一入口（2026-11-11 定）**：所有**登记实验**必须走 Agent 1——`scripts/run_agent1.py` 或
+`dsh --profile quant`。真实数据用 `--data-dir` 指向快照（universe 写 `沪深300`，映射到
+`hs300_40_pit`）。直接调 `quant.engine.run_backtest` 只用于诊断/对照，**不登记实验**，
+也不跳过 `validate_strategy` 的预热与区间校验。
+
+**取数走 Agent 2（2026-11-11 新增）**：`dsh --profile agent2`，只挂 `quant.data_mcp` 的
+`list_snapshots / refresh_snapshot / refresh_status / check_snapshot`。刷新是后台作业，
+轮询到 `succeeded` 后再把新目录交给 Agent 1。没有 Agent 2 会话时用
+`scripts\refresh_and_run.ps1`（规则相同）。
+
 按优先级：
 
 | # | 任务 | 阻塞点 |
 |---|---|---|
-| 1 | 在 QMT 机器上跑 `export_qmt_snapshot.py --probe`，确认本地数据范围与字段 | 只差一次实跑；不需要下载权限 |
-| 2 | 跑正式导出，得到第一份真实快照，再用 `doctor` 核对 | 同第 1 步；数据源已确定 |
-| 3 | 实测 `xttrader` 下单通道 + 程序化交易报备 | 第 3 问未验证；接 Phase 2 前必须做 |
+| 1 | 等中泰答复：下单确认框能否免确认、生产账号类型是否与测试一致、收盘导出文件命名 | 决定执行层停在半自动还是能往前走 |
+| 2 | 把 `SmartXCsvBroker` 接成 `Broker` 适配器：生成 CSV + 读导出对账；提交永远人工 | CSV 生成与对账已完成，缺统一接口适配 |
+| 3 | 真实快照已导入；补双源交叉校验、财报重述检测 | baostock 是单源，静默取错难发现 |
 | 4 | 组合构建层（多因子、权重、敞口上限） | 未开始 |
 | 5 | 公众号：原创声明 + 赞赏 | 需用户在后台手动勾（OpenAPI 无此字段） |
 
-**推荐从第 1 步开始**：先探再导，避免一次拉全市场把问题埋进数据里。
-`--probe` 不写任何文件，只报告本地能读到多少行、哪些标的是空的。
+**两条线可以并行**：数据侧继续补质量校验（第 3 步），执行侧在第 1 步答复前只做
+“提案 → CSV”的离线部分，不碰提交。
 
 ---
 
@@ -95,6 +114,9 @@ Phase 1 已经跑通"研究指令 → 确定性回测 → 指标与实验 ID"，
 | `.ps1` 中文全乱、语法报错 | 无 BOM 的 UTF-8 被当 ANSI | 脚本存成 UTF-8 **带 BOM** |
 | `pytest`/`pip install` 不可用 | 本机无外网 PyPI，只有 DeepSeek API 可达 | 全链路只用标准库 |
 | `dsh` 命令找不到 | 不在 PATH | 用全路径 `...\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd` |
+| 盘中刷新后快照整份加载失败 | 交易日历已含“今天”，但当天行情未生成，`calendar.csv` 末尾一天无报价 | 导出器已把日历/成分裁到最后一个有行情的日期（`calendar_trimmed` 写进 notes）；旧快照需重刷 |
+| 下单被拒“价格超出涨跌停范围” | 用了后复权快照价（601939 快照 30.3099，名义收盘 11.92） | 下单前跑 `scripts/fetch_quotes.py` 取不复权价，生成 CSV 必须带 `--quotes` |
+| 两个内容不同的快照 `dv` 相同 | `manifest.sha256` 目前只覆盖 `prices.csv`，`calendar/universe` 变化不改变 `dv` | 已知问题；复现时同时核对 `files.*.sha256`，待改成全文件哈希 |
 | `dsh headless` 用不了 preset | 源码硬限制（headless 不消费 preset） | 用 profile 级隔离 |
 | 微信错误被判成"成功" | HTTP 200 + body 里带 errcode | `probe_draft_api` 已按 errcode 分类，别再改回去 |
 | 沙箱里跑测试全红 `PermissionError` | Python 3.12 的 `tempfile.mkdtemp` 在 Windows 建出仅所有者可访问的目录，沙箱令牌进不去；与代码无关 | 用完整权限（full access）跑，或在用户自己的终端里跑；不要为此改测试 |
@@ -108,27 +130,50 @@ python scripts\acceptance.py
 
 ---
 
-## 7. 待决策：数据源（QMT 数据下载已被限制）
+## 7. 数据源与执行通道（2026-11-11 更新）
 
-**已知事实**（2026-11-09）：
+**执行侧已有答案，停在半自动**：miniQMT 对个人已全部停用（客服口径），QMT 只剩
+客户端内置策略、拿不到外部信号；SmartX Python 组件是沙箱；可用的是客户端
+「下单 → CSV → 选择上传」或 CLI `startCSV`——能下单、能撤单；下单确认人工点，
+委托/成交/持仓/资产自动导出。
+完整实测记录（字段对照、错误码、操作流程、未决问题）见 `docs/smartx-execution.md`。
 
-- 中泰客服："政策原因，QMT 不支持下载数据"。
-- 社区记录（<https://www.jisilu.cn/question/526075>）：QMT 自 2026-10-23 起限制
-  **读写本地文件、与外部网站交互、在服务器上运行**，但**程序化下单不受影响**。
-- 用户实测/确认：**终端里已下载的数据能读**（第 2 问）、**能导出本地文件**（第 4 问）；
-  `xttrader` 大概率可用（第 3 问未验证）。关闭的是"下载"这一类功能，不是全部接口。
+**数据侧已改道**：QMT 终端里已下载的数据还能读、能导出（2026-11-09 确认），但 QMT 对个人
+已停用，不再作为长期数据源。真实数据走 baostock → CSV → v2 快照，见下面的已落地路径。
 
-**所以现在走这条路**：数据侧只读，交易侧待验证。
+**已落地的真实数据路径**：`scripts/export_baostock_snapshot.py`（在装了 baostock 的
+Python 里跑，例如 SmartX 自带的 `bin\cpython\python.exe`）→ `csv_import` 生成快照。
+默认走**时点成分**：每月末查一次 HS300 名单，按返回的 `updateDate` 前向填充到每个交易日；
+`--no-pit-universe` 可退回当前名单。
 
-| 问题 | 状态 | 结论 |
-|---|---|---|
-| 1. 被关的是下载还是全部 | 已知 | 关闭"下载"；已在终端里的数据仍可用 |
-| 2. 已下载数据能否读本地缓存 | ✅ 能 | `QmtProvider.fetch` 走这条路，不下载 |
-| 3. `xttrader` 下单是否照常 | ❓ 大概率能 | 接 Phase 2 前必须实测，并做程序化交易报备 |
-| 4. 能否导出成本地文件 | ✅ 能 | `scripts/export_qmt_snapshot.py` 已就位 |
+最新真实快照 `dv-946b080b1258`（2026-11-12 增量刷新）：2019-01-02 ~ 2026-11-11，
+40 只时点成分，1905 个交易日，70,931 行价格，体检 9 项全过。
+**所有登记实验统一走 Agent 1**；真实数据示例见 `examples/research_instruction_hs300.json`。
+本轮实测：Agent 2 增量刷新 → Agent 1 动量回测 `exp-156080bc8d3f`（2021-01-04~2026-11-11，
+cagr -0.0646、sharpe -0.2085、回撤 -0.5201、IC -0.0164）。
 
-**当前做法**：终端里人工补数据 → `scripts/export_qmt_snapshot.py` 只读导出 v2 快照
-（**从不调用 `download_history_data`**，测试里用假 xtquant 钉住了这条性质）。
+旧快照 `dv-632cc7c31340`（2019-2024，1456 天）仍保留，历史实验 `exp-3e14b6dd0170` 用它复现。
+
+同参数对照（`2021-01-04~2024-12-31`，报告见 `output/reports/real_vs_synthetic.md`）：
+
+- 等权基准：固定池 7.94% → 时点 **-3.51%**，约 11.5pp 是名单层面的幸存者偏差；
+- 动量：合成 +11.34% → 真实 **-7.76%**（IC 0.002、回撤 -52%）——合成数据的"强动量"是假象；
+- 低波动：合成 -13.04% → 真实 **+8.26%**（IC 0.141，最强），方向翻转；
+- 质量：真实 **-12.91%**（IC -0.059），合成正号不可迁移；
+- 价值：真实 +8.37%（IC 0.077），三个版本都为正，但口径仍偏。
+
+窗口从 2020-01-02 改成 2021-01-04 是因为动量需要 252 天预热而 2020 起点只有 244 天——
+Agent 1 的 `validate_strategy` 拦住了，直接调引擎的旧对照没有拦。
+
+**刷新方式**：优先走 Agent 2（`dsh --profile agent2`）——它调 `refresh_snapshot` 启后台作业，
+用 `refresh_status` 轮询，完成后报告新 `dv`。底层是 `--incremental --base-dir <旧快照>`：默认拿
+最近 10 个交易日做重叠比对，收盘价变化超过 1e-4 判定为除权/数据修订，自动回退全量；财报只补
+最近 4 个季度（重述靠定期全量）。没有 Agent 2 会话时用 `scripts\refresh_and_run.ps1`
+（PowerShell 执行策略需 `Bypass`）。**输出目录不能等于 base**，每次刷新换新目录，旧实验才能按旧
+`dv-…` 复现。Agent 2 需要的环境变量：`NFR_SNAPSHOT_ROOT`、`NFR_BAOSTOCK_PYTHON`（必需）、
+`NFR_EXPORT_SCRIPT`、`NFR_DATA_JOB_DIR`。
+
+（下面这段是 QMT 只读导出的历史记录，个人已无法使用，保留备查。）
 
 ```powershell
 # 先探本地有什么，不写文件
@@ -152,8 +197,9 @@ python scripts\export_qmt_snapshot.py --stocks ... --start ... --end ... --out s
 
 **不变的红线**：不绕过 QMT 的文件/网络限制（改配置、注入、代理）。那是券商协议与监管问题。
 
-**结论**：原来的"导出是分水岭"已经不成立——本地快照 + sha256 复现的架构不依赖券商，
-只读导出这条最省事的路已经打通。见 `docs/architecture.md` 9.5。
+**结论**：本地快照 + sha256 复现的架构不依赖券商，数据侧只需要一份可复现的 CSV。
+执行侧不再追求"外部 API"，接受 SmartX CSV 的半自动流程（人工确认 + 自动导出 + 仓库对账）；
+能不能再往前走（免确认、自动导出）取决于中泰答复，见 `docs/smartx-execution.md` 第 5 节。
 
 ---
 
@@ -164,6 +210,11 @@ python scripts\export_qmt_snapshot.py --stocks ... --start ... --end ... --out s
 | 基准实验（动量，top_k=8） | `exp-a359c2d77697` |
 | 基准 `nav_hash` | `fc5c9e778707e5f1280d1084c4018342aa4013a248e9aec2b3b2391b64a47f1a` |
 | 数据快照版本 | `dv-572bafec2a92`（40 标的 × 1565 交易日，sha256 固定） |
+| 真实快照（baostock，时点成分，最新） | `dv-946b080b1258`（40 标的 × 1905 交易日，2019-2026-11-11） |
+| 真实数据 Agent 1 实验（最新） | `exp-156080bc8d3f`（2021-01-04~2026-11-11，动量） |
+| 真实快照（baostock，时点成分，历史） | `dv-632cc7c31340`（40 标的 × 1456 交易日，2019-2024） |
+| 真实数据 Agent 1 实验（历史） | `exp-3e14b6dd0170`（2021-01-04~2024-12-31） |
+| 真实快照（固定池，历史对照） | `dv-2ccb7042aaf5`（35 标的，有幸存者偏差，勿用于结论） |
 | 引擎版本 | `engine-0.1.0` |
 
 `dv-572bafec2a92` + 上面那个 `nav_hash` 是回归锚：2026-11-09 改 `load_panel` 认 v2 之后
@@ -182,18 +233,22 @@ python -m unittest discover -s tests -t .
 python scripts\acceptance.py
 ```
 
-然后读 `docs/architecture.md` 第 9 节。v2 消费端已经做完，下一步不是改代码，
-而是拿一份真实 CSV 走一遍：
+然后读 `docs/architecture.md` 第 9 节与 `docs/smartx-execution.md`。真实快照和 Agent 2 刷新
+已经落地，下一步不是“找数据”，而是执行适配与组合构建：
+
+1. SmartX CSV → `Broker` 适配（生成与对账已完成，缺统一接口）；
+2. 双源交叉校验 / 财报重述检测；
+3. 组合构建层（多因子、权重、敞口上限）。
+
+先跑这三条确认最新快照可用：
 
 ```powershell
-python -m quant.providers.csv_import --prices raw\prices.csv --out snapshots\first ^
-    --universe <池名> --source "<来源>" --adjust-mode backward
-$env:NFR_DATA_DIR = "snapshots\first"
 python -m quant.cli doctor
+python scripts\run_agent1.py --instruction examples\research_instruction_hs300.json --latest
+python scripts\publish.py status
 ```
 
-先把 `doctor` 里的 `filled_rows` / `point_in_time_universe` / `source` 看一遍，
-再决定这份数据敢不敢用来下结论。不要重新设计架构——现有分层是有理由的，改动前先看第 5 节。
+不要重新设计架构——现有分层是有理由的，改动前先看第 5 节。
 
 ---
 

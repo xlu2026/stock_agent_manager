@@ -1,5 +1,9 @@
 # Phase 1 验收报告
 
+> **历史文档（Phase 1，2026-11-08）**：本报告记录当时的验收结论。之后新增了
+> Agent 2 数据刷新、真实 baostock 快照、SmartX CSV 半自动执行和发布台；
+> 当前架构见 [architecture.md](architecture.md)，当前状态见 [handoff.md](handoff.md)。
+>
 > 生成环境：Windows，Python 3.12.8（`C:\Program Files\Python312\python.exe`），
 > DSH Desktop 0.2.2-rc.1，工作区 `C:\AI_workspace\stock_agent_manager`。
 > 全部结论均可由 `python scripts\acceptance.py` 复现。
@@ -148,7 +152,7 @@ python scripts\run_agent1.py --instruction examples\research_instruction.json
 python -m agents.agent3 --brief examples\brief_demo.json
 ```
 
-→ `C:\AI_workspace\wechat_writing\articles\2026-11-08-factor-to-backtest-001.md`（确定性渲染，1134 字；文件名取渲染当天日期，
+→ `C:\AI_workspace\wechat_writing\articles\[量化研究_001] 2026-11-08-factor-to-backtest-001.md`（确定性渲染，1134 字；文件名取渲染当天日期，
 目录只保留最新一份）。
 front matter 含 `schema/title/slug/date/status/author/series/category/phase/tags/summary/
 experiment_ref/data_source/word_count/compliance/generated_by/render_path`；
@@ -156,7 +160,7 @@ experiment_ref/data_source/word_count/compliance/generated_by/render_path`；
 
 同时验证了模型驱动的路径（素材包契约见 `examples/research_package.json`）：
 `writing` profile 的 Agent 3 读 `C:\AI_workspace\wechat_writing\briefs\002-momentum-package.json`，
-按新提示词写出 `C:\AI_workspace\wechat_writing\articles\2026-11-07-momentum-package.md`
+按新提示词写出 `C:\AI_workspace\wechat_writing\articles\[存档] 2026-11-07-momentum-package.md`
 （1440 字，合规 0 违规、文风自检 0 警告，合成数据声明与风险提示均逐字命中）。
 
 ### 交付物 3：`check_wechat_draft.py` 给出明确结论
@@ -195,11 +199,11 @@ python scripts\check_wechat_draft.py
 
 ```powershell
 python tools\gen_sample_data.py     # 重建数据快照（可选，已提交）
-python -m unittest discover -s tests -t .   # 当前 110 项
-python scripts\acceptance.py        # 当前 11 项（含知乎导出）
+python -m unittest discover -s tests -t .   # 当前 215 项
+python scripts\acceptance.py        # 当前 14 项（含知乎导出/发布台）
 ```
 
-当前结果：**110/110 单测通过，11/11 验收通过**。
+当前结果：**215/215 单测通过，14/14 验收通过**。
 机器可读结果：[`output/reports/acceptance.json`](../output/reports/acceptance.json)。
 
 ---

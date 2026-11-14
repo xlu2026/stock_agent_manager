@@ -1,19 +1,23 @@
-# 杂灵根散修录 · 量化研究 Agent（Phase 1）
+# 杂灵根散修录 · 量化研究 Agent（Phase 1 + 数据/执行链路）
 
-一个散户把"价值判断"写成可回测因子的公开实验。这一期只做**最小可验证闭环**：
-结构化研究指令 → 确定性回测 → 指标与实验 ID；以及公众号文章的 Markdown 草稿降级路径、
-知乎导出（只导出，不发布）。
+一个散户把“价值判断”写成可回测因子的公开实验。当前跑通三件事：
 
+- **Agent 2**：把真实行情刷新成可复现快照（baostock → CSV → v2）；
+- **Agent 1**：四字段研究指令 → 确定性回测 → 指标与实验 ID；
+- **Agent 3**：技术文章写作 → 公众号草稿 / 知乎导出 → 人工发布。
+
+执行侧停在 SmartX CSV 半自动：能生成订单 CSV、能自动导出对账，但下单确认必须人工点。
 不是选股服务，不展示实时信号，不承诺收益，不推荐个股。这里是认知记录，不是工具橱窗。
 
 | 想先看什么 | 去哪 |
 |---|---|
 | 怎么跑起来 | 本文「快速开始」 |
 | 架构、假设、合规可达性分析 | [docs/architecture.md](docs/architecture.md) |
-| 验收结论与已知限制 | [docs/phase1-report.md](docs/phase1-report.md) |
+| 验收结论与已知限制（Phase 1 历史报告） | [docs/phase1-report.md](docs/phase1-report.md) |
 | 策略规格与版本规则 | [docs/strategy.md](docs/strategy.md) |
 | 公众号账号状态（接口权限、白名单、变现开通） | [docs/wechat-account.md](docs/wechat-account.md) |
 | 平台发布（知乎导出、发布 SOP、记录） | [docs/platforms.md](docs/platforms.md) |
+| 发布台（status / prepare / done） | [docs/publishing.md](docs/publishing.md) |
 | 文章分类（量化研究 / AI技术 / 市场复盘 / 杂项） | [docs/article-categories.md](docs/article-categories.md) |
 
 ---
@@ -34,6 +38,11 @@ python scripts\run_agent1.py --instruction examples\research_instruction.json
 #    等价的 CLI 写法（--dry-run 只做契约解析，不回测）
 python -m quant.cli research --spec-file examples\research_instruction.json --dry-run
 
+# 2b) Agent 2：刷新真实行情快照（需 NFR_BAOSTOCK_PYTHON / NFR_SNAPSHOT_ROOT）
+dsh --profile agent2 "用最新的快照增量刷新到今天"
+#    刷新完成后，Agent 1 用 --latest 接最新快照
+python scripts\run_agent1.py --instruction examples\research_instruction_hs300.json --latest
+
 # 3) 直接跑引擎（输入是内部 spec，不是四字段契约，用于复现/调试）
 python -m quant.cli backtest --spec-file examples\research_momentum.json
 
@@ -46,9 +55,9 @@ python scripts\check_wechat_draft.py
 python scripts\check_wechat_draft.py --require-available --json
 
 # 5b) 推草稿进草稿箱（只到 draft/add，没有发布能力）
-python scripts\push_draft.py --file C:\AI_workspace\wechat_writing\articles\2026-11-07-opening.md --cover output\articles\cover-opening-2.35x1.png
+python scripts\push_draft.py --file C:\AI_workspace\wechat_writing\articles\[杂项_001] 2026-11-07-opening.md --cover output\articles\cover-opening-2.35x1.png
 #    原地改已有草稿的封面/正文（不新建）
-python scripts\push_draft.py --file C:\AI_workspace\wechat_writing\articles\2026-11-07-opening.md --cover <图片> --update-media-id <草稿ID>
+python scripts\push_draft.py --file C:\AI_workspace\wechat_writing\articles\[杂项_001] 2026-11-07-opening.md --cover <图片> --update-media-id <草稿ID>
 
 # 6) Agent 3 降级路径：带 front matter 的 Markdown
 python -m agents.agent3 --brief examples\brief_demo.json
@@ -56,11 +65,16 @@ python -m agents.agent3 --brief examples\brief_demo.json
 # 6b) 知乎导出：只生成可粘贴稿 + 人工清单，不发布
 python -m writing.export --all
 
-# 7) 一键验收（11 项）
+# 7) 一键验收（14 项）
 python scripts\acceptance.py
 
-# 8) 回归测试（110 项）
+# 8) 回归测试（215 项）
 python -m unittest discover -s tests -t .
+
+# 9) 发布台：状态 / 卡片 / 回填（不发布）
+python scripts\publish.py status
+python scripts\publish.py prepare <slug> --platform zhihu
+python scripts\publish.py done --platform zhihu <slug> --url <URL>
 ```
 
 真实行情接入（换数据源只换 CSV，不改引擎）：
@@ -80,7 +94,45 @@ $env:NFR_DATA_DIR = "snapshots\first"
 python -m quant.cli doctor
 ```
 
-有 QMT 终端、且本地已经下载过行情时，可以只读导出（不联网、不下载）：
+有 baostock 的 Python（例如 SmartX 客户端自带的 `bin\cpython\python.exe`）可以直接拉真实日线
+并生成 v2 快照：
+
+```powershell
+python scripts\export_baostock_snapshot.py --out snapshots\real40 ^
+    --universe hs300_40 --index hs300 --sample 40 ^
+    --start 2019-01-01 --end 2024-12-31 --fundamentals
+```
+
+脚本只依赖 baostock，仓库本身仍是纯标准库（baostock 只在 main() 里 import）。默认按**时点成分**
+取样（每月末查一次 HS300 名单，按返回的 `updateDate` 前向填充），`--no-pit-universe`
+可退回“当前名单”。成分口径会写进 `manifest.notes`。
+
+真实数据的**登记实验统一走 Agent 1**（与写文章统一走 Agent 3 同理）：
+
+```powershell
+python scripts\run_agent1.py --instruction examples\research_instruction_hs300.json --latest
+```
+
+`--latest` 读 Agent 2 刷新的最新快照指针（`output\data\latest.json`）；也可以继续用
+`--data-dir` 显式指定目录。两者只能选一个。
+
+日常刷新可以走增量（重叠窗口校验，发现除权/修订自动回退全量），再一键跑 Agent 1：
+
+```powershell
+# 增量：基于上一份快照
+powershell -ExecutionPolicy Bypass -File scripts\refresh_and_run.ps1 `
+    -Base C:\AI_workspace\smartx_client\out\real40_pit `
+    -Out C:\AI_workspace\smartx_client\out\real40_pit_20261111
+
+# 全量
+powershell -ExecutionPolicy Bypass -File scripts\refresh_and_run.ps1 `
+    -Full -Out C:\AI_workspace\smartx_client\out\real40_pit_20261111
+```
+
+也可以直接用导出脚本：`--incremental --base-dir <旧快照>`，
+默认拿最近 10 个交易日做重叠比对（`--overlap-days` 可调）。
+
+QMT 只读导出（个人 QMT 已停用，以下仅历史备查）：
 
 ```powershell
 # 先探本地能读到什么（不写文件）
@@ -103,18 +155,31 @@ python -m quant.broker.approve <提案ID>
 
 # 真实数据快照体检（schema v2；不通过就别拿去回测）
 python scripts\check_snapshot.py <快照目录>
+
+# SmartX 下单 CSV：先抓不复权价，再生成（客户端「选择上传」与「下单」仍由人点）
+python scripts\fetch_quotes.py --symbols 601939.SH --out output\broker\quotes.json
+python scripts\make_smartx_csv.py --proposal <提案ID> --account <资金账号> --quotes output\broker\quotes.json
+
+# SmartX 自动导出对账（只读，不产生订单；--archive 另存一份带时间戳的快照）
+python scripts\reconcile_smartx.py --dir C:\AI_workspace\smartx_client\out\orders --archive
 ```
+
+SmartX「设置 → 自动导出设置」每 120 秒把 6 个 CSV 整份覆盖到导出目录。仓库按
+`rowId` 把委托对回提案，列出已成交/已撤/已拒绝/未匹配；下单确认仍需人工点。
 
 DSH 侧（手动触发、不常驻）。`dsh` 需要能直接调用；若不在 PATH，用
 `C:\Users\<you>\AppData\Local\Programs\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd`。
 
 ```powershell
-# 安装两个 profile（量化 / 写作），幂等，可重复执行
+# 安装三个 profile（量化 / 数据运维 / 写作），幂等，可重复执行
 python tools\build_cordis.py
 python tools\install_dsh_profile.py
 
 # Agent 1：会真实调用 mcp__srq__* 工具；没有 shell
 dsh --profile quant "研究问题：过去一年涨幅靠前的是否继续走强。池子 synthetic_40，区间 2020-01-02~2024-12-31。"
+
+# Agent 2：数据运维；只刷新/体检，不跑回测、不下单
+dsh --profile agent2 "用最新的快照增量刷新到今天"
 
 # Agent 3：工作区是 C:\AI_workspace\wechat_writing；工具表里没有量化工具
 cd C:\AI_workspace\wechat_writing
@@ -141,7 +206,8 @@ Agent 1 对外只接受四个字段（任务书 3.2）：
 等于间接进入盈亏回路。歧义时直接报 `FACTOR_AMBIGUOUS`，不猜。
 
 可选覆盖项：`rebalance` / `top_k` / `cost_bps` / `seed` / `data_version`。
-`universe` 目前只支持 `synthetic_40`；写 `沪深300` 会明确报 `UNIVERSE_UNAVAILABLE`，不会假装回测。
+`universe` 支持 `synthetic_40` 和 `沪深300`；后者映射到快照里的 `hs300_40_pit` 时点成分。
+实际池子不存在、或快照缺时点成分时，明确报 `UNIVERSE_UNAVAILABLE`，不会假装回测。
 
 可选覆盖之外，`python -m quant.cli backtest` 用的是**内部 spec**（`factor/start/end`），
 仅用于复现和调试，不是对外契约。
@@ -151,27 +217,28 @@ Agent 1 对外只接受四个字段（任务书 3.2）：
 ## 架构
 
 ```
-        四字段研究指令 ───▶ ┌──────────────────────────────┐
-   question/universe/       │  Agent 1（profile: quant）    │
-   period/factor_logic      │  只做编排，不做计算            │
-                            └──────────────┬───────────────┘
-                                           │ MCP stdio (JSON-RPC)
-                                           ▼
-                            ┌──────────────────────────────┐
-                            │ srq-compat MCP server         │
-                            │ run_research_instruction      │
-                            │ run_backtest / validate_...   │
-                            │ 关键词表映射 + 确定性引擎      │
-                            └──────────────┬───────────────┘
-                                           │ 只读
-                                           ▼
-                            ┌──────────────────────────────┐
-                            │ quant/data/prices.csv         │
-                            │ + manifest.json（sha256 指纹）│
-                            └──────────────────────────────┘
-
-   写作简报 ──▶ Agent 3（profile: writing）──▶ 工作区 articles/*.md
-                无量化工具、无发布能力        └▶ 草稿箱（有凭据 + 封面素材时）
+                  ┌──────────────────────────────┐
+                  │ Agent 2（profile: agent2）   │
+                  │ data-ops：刷新/体检快照      │
+                  └───────────────┬──────────────┘
+                                  │ snapshots + output/data/latest.json
+                                  ▼
+四字段研究指令 ──▶ ┌──────────────────────────────┐
+question/universe   │ Agent 1（profile: quant）    │
+period/factor_logic │ srq：research 10 / full 14   │
+                    │ 只编排，不计算               │
+                    └───────────────┬──────────────┘
+                                    │ 指标 / 实验 ID / experiments/
+                                    ▼
+写作简报 ──▶ Agent 3（profile: writing）──▶ 文章 + 平台版本
+             无量化工具、无发布能力          │
+                                             ▼
+                                发布台（scripts/publish.py）
+                                status / prepare / done
+                                             │
+                          微信草稿箱 / 知乎导出（无发布）
+                                             │
+                                        人手动发布
 ```
 
 两条写作路径，成文稿落在同一个地方：
@@ -183,7 +250,7 @@ Agent 1 对外只接受四个字段（任务书 3.2）：
 可用 `WFR_ARTICLES_DIR` 覆盖）。仓库 `output/articles/` 只剩封面素材与导出物；验收渲染的副本在
 `output/reports/acceptance_article/`。
 
-写完到发布之间，仓库侧有三个脚本：
+写完到发布之间，仓库侧有这些入口：
 
 ```powershell
 # 推草稿：封面按栏目自动取（读 output/articles/covers/manifest.json），成功后写账本
@@ -191,6 +258,11 @@ python scripts\push_draft.py --file C:\AI_workspace\wechat_writing\articles\<文
 
 # 发布后回写：改 front matter、追加 CHANGELOG、git 提交
 python scripts\mark_published.py <slug> --ai-declared AI创作
+
+# 发布台：状态 / 卡片 / 回填（只读写本地文件，不发布）
+python scripts\publish.py status
+python scripts\publish.py prepare <slug> --platform zhihu
+python scripts\publish.py done --platform zhihu <slug> --url <URL>
 
 # 单独提交工作区（改了正文但还没推时用）
 python scripts\commit_articles.py -m "量化研究 004：补数据源一节"
@@ -207,8 +279,9 @@ python scripts\commit_articles.py -m "量化研究 004：补数据源一节"
 | 因子不由模型选择 | 四字段契约 + 服务端关键词表，模型没有 `factor` 参数 |
 | 防前视偏差 | 调仓日 t 的因子只用 t-1 及以前数据；`signal_date = fill_date - 1 交易日`，有测试守着 |
 | 可复现 | 无随机数、无 wall clock；`nav_hash` 覆盖整条净值序列；实验 ID 由 spec+数据指纹算出 |
-| 实盘隔离 | Phase 1 无任何下单实现；实盘路线只对 Agent 1 开放且仅限本人账户，与对外表达完全分离 |
-| 无自动发布 | 写作服务端只有 3 个草稿工具，没有发布接口；全仓库无 `freepublish` 调用 |
+| 数据刷新单入口 | 只有 Agent 2 的 `data-ops`（或人工 `refresh_and_run.ps1`）写快照；Agent 1 只读 |
+| 执行隔离 | 没有程序化下单适配器；`PaperBroker` 之外没有真实 Broker；SmartX CSV 只生成文件，上传/确认由人 |
+| 无自动发布 | 写作服务端只有 3 个草稿工具；另有本地导出/发布台；无 `freepublish`、无浏览器、无知乎写接口 |
 
 ---
 
@@ -216,55 +289,74 @@ python scripts\commit_articles.py -m "量化研究 004：补数据源一节"
 
 | 路径 | 作用 |
 |---|---|
-| `quant/` | 回测内核：四字段契约、spec、数据、因子、引擎、实验登记、MCP 服务端、CLI |
-| `quant/data/` | 合成样本数据快照 + sha256 清单 |
-| `quant/broker/` | 券商通道契约（`Broker`）+ `PaperBroker`；无真实适配器，见架构文档第 7 节 |
-| `writing/` | 文章渲染、合规扫描、草稿客户端、平台导出（知乎）、草稿 MCP 服务端（**不 import quant**） |
-| `shared/` | 中立 MCP stdio 协议实现，两侧共用，不放业务逻辑 |
-| `agents/` | Agent 1 / Agent 3 编排、MCP 客户端、统一输出信封 |
-| `cordis/` | `prompts/`（提示词单一来源）、`profiles/`（生成的两个 profile patch）、`phase1-presets.yml` |
-| `scripts/` | 验收、MCP 自检、草稿接口预检、Agent 1 入口脚本 |
-| `tools/` | 数据生成、封面生成、Cordis 生成与安装、排查 DSH 用的 asar 读取器 |
+| `quant/` | 量化内核 + 数据运维：四字段契约、spec、数据、因子、引擎、实验登记、MCP（srq / data-ops）、CLI |
+| `quant/data/` | 合成样本数据快照 + sha256 清单（真实快照在外部目录，通过 `NFR_DATA_DIR` / `--latest` 接入） |
+| `quant/providers/` | v2 快照：CSV 导入、QMT 只读、快照体检、契约 |
+| `quant/broker/` | `PaperBroker` + 提案/批准 + SmartX CSV 生成/导出对账；无真实 Broker 适配器 |
+| `writing/` | 文章渲染、合规、草稿客户端、知乎导出、发布台、草稿 MCP（**不 import quant**） |
+| `shared/` | 中立 MCP stdio 协议实现，两侧共用 |
+| `agents/` | Agent 1 / Agent 3 的 Python 编排；Agent 2 由 profile + `quant/data_mcp.py` 组成 |
+| `cordis/` | `prompts/`（三个 Agent 的提示词单一来源）、`profiles/`（quant / agent2 / writing） |
+| `scripts/` | Agent 1/2 入口、CSV/baostock 导出、SmartX 工具、发布台、验收、MCP 自检 |
+| `config/` | `agent2.example.json`（数据刷新配置）、`publishing.json`（发布默认值）；均不含凭据 |
+| `tools/` | 数据生成、封面生成、Cordis 生成与安装、asar 读取器 |
 | `examples/` | 四字段研究指令、内部 spec、写作简报示例 |
-| `experiments/` | 实验记录（公开日志，每条带 spec/数据指纹/nav_hash） |
-| `output/` | `reports/` 汇报、`articles/` 文章与知乎导出（`articles/zhihu/`）、`evidence/` 验收证据 |
-| `tests/` | 回归测试 |
+| `experiments/` | 公开实验记录；个股代码在 `experiments/.private/`（gitignore） |
+| `output/` | `reports/`、`articles/`（文章与知乎导出）、`data/latest.json` 指针、`evidence/`、`broker/` |
+| `tests/` | 215 项回归测试 |
 | `bin/srq.cmd` | `srq mcp serve` 兼容入口（纯 ASCII 批处理） |
 
 ---
 
-## 两套 Agent 怎么隔离
+## 三套 Agent 怎么隔离
 
-| 维度 | Agent 1（quant） | Agent 3（writing） |
-|---|---|---|
-| DSH profile | `~/.dsh/profiles/quant` | `~/.dsh/profiles/writing` |
-| 工作区 | `C:\AI_workspace\stock_agent_manager` | `C:\AI_workspace\wechat_writing` |
-| MCP 服务端 | `srq`（11 个工具，含 4 个模拟下单） | `draft`（3 个工具） |
-| shell / subagent / workflow / web | 全部关闭 | 全部关闭 |
-| 实测工具数 | 20 | 12 |
-| 系统提示词 | `cordis/prompts/agent1.md` | `cordis/prompts/agent3.md`（人设 + 文风 + 固定免责声明） |
-| 发布能力 | —— | 不存在 |
+| 维度 | Agent 1（quant） | Agent 2（agent2） | Agent 3（writing） |
+|---|---|---|---|
+| DSH profile | `~/.dsh/profiles/quant` | `~/.dsh/profiles/agent2` | `~/.dsh/profiles/writing` |
+| 工作区 | `C:\AI_workspace\stock_agent_manager` | 同左 | `C:\AI_workspace\wechat_writing` |
+| MCP 服务端 | `srq`（research 模式 10 个工具；完整模式 14 个） | `data`（6 个：列快照/刷新/状态/取消/清理/体检） | `draft`（3 个工具） |
+| shell / subagent / workflow / web | 全部关闭 | 全部关闭 | 全部关闭 |
+| 实测工具数 | 20 | —（按 profile 生成物） | 12 |
+| 系统提示词 | `cordis/prompts/agent1.md` | `cordis/prompts/agent2.md` | `cordis/prompts/agent3.md`（人设 + 文风 + 固定免责声明） |
+| 发布能力 | —— | 不存在 | 不存在 |
 
-两个 profile 的 patch 由 `tools/build_cordis.py` 从同一份提示词生成，避免手改漂移。
+三个 profile 的 patch 由 `tools/build_cordis.py` 从同一份提示词生成，避免手改漂移。
 实测证据：quant 会话真实发出 `mcp__srq__run_research_instruction` 并复述实验 ID；
 writing 会话回答 `NO_SRQ_TOOL`，但能调 `mcp__draft__wechat_probe_draft`。
+Agent 2 的工具面由 `quant/data_mcp.py` 定义，只做数据刷新与体检，不跑回测。
+
+Agent 2 成功后除了写快照，还会更新 `output\data\latest.json` 指针（dv / 目录 / 区间），
+Agent 1 用 `--latest` 直接接上。发布用的实验记录只保留脱敏持仓（无个股代码），
+代码在 `experiments\.private\`（gitignore）。
+
+Agent 2 优先读仓库里的 `config/agent2.json`（已 gitignore，示例见
+`config/agent2.example.json`），其次读环境变量：
+
+```powershell
+$env:NFR_BAOSTOCK_PYTHON = "C:\Users\ADMIN\AppData\Local\Programs\xtp_rich_client\bin\cpython\python.exe"
+$env:NFR_SNAPSHOT_ROOT = "C:\AI_workspace\smartx_client\out"
+dsh --profile agent2 "用最新的快照增量刷新到今天"
+```
 
 ---
 
 ## 与项目简报的偏差（重要）
 
-五处与简报假设不一致，均已按实际调整，细节见 [docs/architecture.md](docs/architecture.md) 第 5 节：
+六处与简报假设不一致，均已按实际调整，细节见 [docs/architecture.md](docs/architecture.md) 第 5 节：
 
 1. **`srq` / SolidRockQuant 不存在**（机器上没有，PyPI 也不可达）→ 按约定工具面自建
    `srq-compat` MCP 服务端，命令仍是 `srq mcp serve`，工具名与简报一致。它**不是** SolidRockQuant，
    接真机时字段需要逐项核对。
-2. **`deepseek-harness-sdk` 不存在**（PyPI 无此包，外网仅 DeepSeek API 可达）→ 控制平面改用
-   `dsh` CLI + `agents/mcp_client.py`；Python 侧零第三方依赖，因此不存在 3.12 兼容性问题。
-3. **数据是合成样本**（无行情源）→ 40 个标的、六年、约 6.2 万条日频记录，固定种子生成，
-   sha256 固定。它的用途是验证链路，**不能**用于推断真实市场。
-4. **`dsh headless` 不消费 agent preset**（源码硬限制）→ Phase 1 用 profile 级隔离；
-   preset 形态的配置保留给 Web 会话，未在 Web 上实测。
+2. **`deepseek-harness-sdk` 不存在** → 控制平面改用 `dsh` CLI + `agents/mcp_client.py`；
+   仓库主链路零第三方依赖。
+3. **数据不再只有合成样本**：合成锚 `dv-572bafec2a92` 仍用于回归；真实 baostock 快照
+   `dv-946b080b1258` 已跑通（40 只 × 1905 天、时点成分）。QMT 对个人已停用，数据侧改走
+   baostock/CSV，与券商解耦。
+4. **`dsh headless` 不消费 agent preset**（源码硬限制）→ 用 profile 级隔离；
+   preset 形态保留给 Web 会话，未在 Web 上端到端实测。
 5. **`factor_logic` 由代码映射，不由模型选择** → 否则模型就决定了回测跑什么。
+6. **执行侧不是 QMT 自动化**：miniQMT 对个人停用，SmartX Python 组件是沙箱；可用的是
+   SmartX CSV 半自动（生成 CSV → 人工上传/确认 → 自动导出对账），**没有程序化下单适配器**。
 
 ---
 
@@ -285,11 +377,13 @@ writing 会话回答 `NO_SRQ_TOOL`，但能调 `mcp__draft__wechat_probe_draft`�
 
 ---
 
-## Phase 2/3 预留（本期不实现）
+## 尚未实现 / 下一阶段
 
-- Router：`agents/envelope.py` 已定义统一信封（`schema/agent/kind/status/id/artifacts/compliance`），
-  派活规则应在代码里按 `kind + status + handoff_eligible` 硬编码，不交给模型判断。
-- 数据接入：已经落地为「CSV 快照」路线——`quant/providers/csv_import.py` 导 v2，
-  `load_panel` 消费，`NFR_DATA_DIR` 切换。工具面不变，引擎不变。
-- 部署验证：`run_paper_session` 已能产出模拟台账，接真实行情后可直接复用。
-- 未做：常驻调度、自主派活、实盘、自动发布、Agent 4。
+- **执行**：SmartX CSV 半自动已落地（生成 CSV、人工上传/确认、自动导出对账）；
+  缺 `SmartX CSV → Broker` 适配器、免确认流程和程序化下单。实盘路线仍受 `AGENTS.md` B 节约束。
+- **数据**：真实 baostock 快照已跑通；缺双源交叉校验、财报重述检测，以及 `manifest.sha256`
+  从“主要覆盖 prices.csv”升级为全文件哈希。
+- **发布**：发布台（`scripts/publish.py`）已落地；未做自动发布、浏览器自动化；Agent 4 未建。
+- **Router / 常驻调度 / 自主派活**：未做；`agents/envelope.py` 只定义统一信封。
+- **组合构建层**（多因子、权重、敞口上限）：未开始。
+- **PaperBroker** 仍是唯一 Broker 实现；`run_paper_session` 可继续用于部署前验证。
