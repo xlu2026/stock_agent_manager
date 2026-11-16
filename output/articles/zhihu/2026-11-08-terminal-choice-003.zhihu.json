@@ -17,14 +17,15 @@
   "source": "C:\\AI_workspace\\wechat_writing\\articles\\2026-11-08-terminal-choice-003.md",
   "source_sha256": "bafde6872272cea6b2fe0de8c3bb33c5f39e94f1f130c2ce9c0e493456b360e6",
   "exported_at": "2026-11-12T09:47:12+08:00",
-  "status": "exported",
-  "canonical": null,
-  "published_at": null,
-  "published": false,
+  "status": "published",
+  "canonical": "https://zhuanlan.zhihu.com/p/2104148876122920260",
+  "published_at": "2026-11-12",
+  "published": true,
   "publish_api": "absent",
   "compliance": {
     "ok": true,
     "disclaimer_version": "disclaimer-2026-11-v2",
     "violations": []
-  }
+  },
+  "notes": "知乎发布：2026-11-12"
 }

@@ -17,14 +17,15 @@
   "source": "C:\\AI_workspace\\wechat_writing\\articles\\2026-11-08-agent-to-draftbox-001.md",
   "source_sha256": "3a5497efaa972c624941057dace6f73fb517f2f61e3185a663001be1e5de471d",
   "exported_at": "2026-11-10T11:42:44+08:00",
-  "status": "exported",
-  "canonical": null,
-  "published_at": null,
-  "published": false,
+  "status": "published",
+  "canonical": "https://zhuanlan.zhihu.com/p/2103465812954825929",
+  "published_at": "2026-11-10",
+  "published": true,
   "publish_api": "absent",
   "compliance": {
     "ok": true,
     "disclaimer_version": "disclaimer-2026-11-v2",
     "violations": []
-  }
+  },
+  "notes": "知乎发布：2026-11-10"
 }

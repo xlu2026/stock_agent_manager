@@ -17,14 +17,15 @@
   "source": "C:\\AI_workspace\\wechat_writing\\articles\\[AI技术_002] 2026-11-08-agent-approval-002.md",
   "source_sha256": "44363c685420998986b658fd3170e4dd6bd945b1c1a927977377c95b248fc2bd",
   "exported_at": "2026-11-13T13:50:25+08:00",
-  "status": "exported",
-  "canonical": null,
-  "published_at": null,
-  "published": false,
+  "status": "published",
+  "canonical": "https://zhuanlan.zhihu.com/p/2104626543800668577",
+  "published_at": "2026-11-13",
+  "published": true,
   "publish_api": "absent",
   "compliance": {
     "ok": true,
     "disclaimer_version": "disclaimer-2026-11-v2",
     "violations": []
-  }
+  },
+  "notes": "知乎发布：2026-11-13"
 }

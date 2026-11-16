@@ -19,7 +19,7 @@
   "exported_at": "2026-11-10T11:42:50+08:00",
   "status": "published",
   "canonical": "https://zhuanlan.zhihu.com/p/2103182137985976284",
-  "published_at": "2026-11-09T17:52:00+08:00",
+  "published_at": "2026-11-09",
   "published": true,
   "publish_api": "absent",
   "compliance": {
@@ -27,5 +27,5 @@
     "disclaimer_version": "disclaimer-2026-11-v2",
     "violations": []
   },
-  "notes": "手动发布（2026-11-09 17:52，四川）；AI 声明已勾；收录于专栏；实际话题 3 个（独立思考/个人成长/效率工具，未含方法论）；首发句已加"
+  "notes": "手动发布（2026-11-09 17:52，四川）；AI 声明已勾；收录于专栏；实际话题 3 个（独立思考/个人成长/效率工具，未含方法论）；首发句已加；知乎发布：2026-11-09"
 }

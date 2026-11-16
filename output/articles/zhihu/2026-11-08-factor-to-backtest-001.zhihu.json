@@ -17,14 +17,15 @@
   "source": "C:\\AI_workspace\\wechat_writing\\articles\\2026-11-08-factor-to-backtest-001.md",
   "source_sha256": "0de09b9269d7d2f2d139ddccb2f260800c4d039955b9b5025c9028a6d0142454",
   "exported_at": "2026-11-10T12:34:38+08:00",
-  "status": "exported",
-  "canonical": null,
-  "published_at": null,
-  "published": false,
+  "status": "published",
+  "canonical": "https://zhuanlan.zhihu.com/p/2103466669519777933",
+  "published_at": "2026-11-10",
+  "published": true,
   "publish_api": "absent",
   "compliance": {
     "ok": true,
     "disclaimer_version": "disclaimer-2026-11-v2",
     "violations": []
-  }
+  },
+  "notes": "知乎发布：2026-11-10"
 }

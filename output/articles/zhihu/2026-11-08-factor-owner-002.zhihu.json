@@ -17,14 +17,15 @@
   "source": "C:\\AI_workspace\\wechat_writing\\articles\\2026-11-08-factor-owner-002.md",
   "source_sha256": "359e26f5f66996e9997b36ff1d06f9402ff42322ded37cc6cbb8ebb712f13600",
   "exported_at": "2026-11-10T12:34:38+08:00",
-  "status": "exported",
-  "canonical": null,
-  "published_at": null,
-  "published": false,
+  "status": "published",
+  "canonical": "https://zhuanlan.zhihu.com/p/2103467248086266931",
+  "published_at": "2026-11-10",
+  "published": true,
   "publish_api": "absent",
   "compliance": {
     "ok": true,
     "disclaimer_version": "disclaimer-2026-11-v2",
     "violations": []
-  }
+  },
+  "notes": "知乎发布：2026-11-10"
 }

@@ -17,14 +17,15 @@
   "source_sha256": "c452322c64db59c4ccdebb8f801c1be565d0deaa004648baa0a0e2e5e40afa7c",
   "body_sha256": "53a60569bad7c9bf825254a6eb3c642205aab26748234fdeb72772c520a8d0fb",
   "exported_at": "2026-11-16T17:41:32+08:00",
-  "status": "exported",
-  "canonical": null,
-  "published_at": null,
-  "published": false,
+  "status": "published",
+  "canonical": "https://zhuanlan.zhihu.com/p/2105712917857441643",
+  "published_at": "2026-11-16",
+  "published": true,
   "publish_api": "absent",
   "compliance": {
     "ok": true,
     "disclaimer_version": "disclaimer-2026-11-v2",
     "violations": []
-  }
+  },
+  "notes": "知乎发布：2026-11-16"
 }

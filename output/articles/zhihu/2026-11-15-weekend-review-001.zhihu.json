@@ -1,0 +1,32 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "周末复盘：几个方向的依据与失效条件",
+  "slug": "weekend-review-001",
+  "date": "2026-11-15",
+  "series": "杂灵根散修录",
+  "category": "市场复盘",
+  "summary": "六个资产类别的方向判断，每条写清依据与失效条件。",
+  "topics": [
+    "宏观经济",
+    "金融市场",
+    "市场分析",
+    "方法论"
+  ],
+  "cover": "output\\articles\\covers\\cover-market-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\[市场复盘_001] 2026-11-15-weekend-review-001.md",
+  "source_sha256": "0abc7b50292c5d76f7abc49f581db761b64d3148796152a52f63d2c65d050bd9",
+  "body_sha256": "ca4af9efd81971d52fb0551d30a53cad5ac7d4ec1f3d4ee09fd930703ebabfcf",
+  "exported_at": "2026-11-15T20:19:41+08:00",
+  "status": "published",
+  "canonical": "https://zhuanlan.zhihu.com/p/2105395568654694082",
+  "published_at": "2026-11-15",
+  "published": true,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  },
+  "notes": "知乎发布：2026-11-15"
+}
