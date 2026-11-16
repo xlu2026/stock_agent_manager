@@ -10,14 +10,13 @@
   "topics": [
     "人工智能",
     "AI Agent",
-    "编程",
-    "软件工程"
+    "编程"
   ],
   "cover": "output\\articles\\covers\\cover-ai-2.35x1.png",
   "source": "C:\\AI_workspace\\wechat_writing\\articles\\[AI技术_004] 2026-11-12-half-auto-004.md",
-  "source_sha256": "ecd7571118af6eb9c39722afc8796c831be7470da0748d00a059eab45a02433a",
-  "body_sha256": "a5567dd9a96861f7ab7696b295a9dac5f8d1286112007962e4ce34a2c1860716",
-  "exported_at": "2026-11-16T17:22:22+08:00",
+  "source_sha256": "ad49cf4151308430f8d755c90a897b1d32bad60561a218885f7cf5a22d38d320",
+  "body_sha256": "eec960f54d70ab79b6c9b8112f44611e421525b6e51acce349cb90164bd9b5df",
+  "exported_at": "2026-11-16T17:41:32+08:00",
   "status": "exported",
   "canonical": null,
   "published_at": null,
