@@ -1,0 +1,31 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "差一次点击的距离",
+  "slug": "half-auto-004",
+  "date": "2026-11-12",
+  "series": "杂灵根散修录",
+  "category": "AI技术",
+  "summary": "agent 能把下单链路准备到最后一步，剩下那一次点击是责任边界",
+  "topics": [
+    "人工智能",
+    "AI Agent",
+    "编程",
+    "软件工程"
+  ],
+  "cover": "output\\articles\\covers\\cover-ai-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\[AI技术_004] 2026-11-12-half-auto-004.md",
+  "source_sha256": "ecd7571118af6eb9c39722afc8796c831be7470da0748d00a059eab45a02433a",
+  "body_sha256": "a5567dd9a96861f7ab7696b295a9dac5f8d1286112007962e4ce34a2c1860716",
+  "exported_at": "2026-11-16T17:22:22+08:00",
+  "status": "exported",
+  "canonical": null,
+  "published_at": null,
+  "published": false,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  }
+}

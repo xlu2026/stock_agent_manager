@@ -1,0 +1,31 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "能写策略，不等于能接自动化",
+  "slug": "sandbox-003",
+  "date": "2026-11-12",
+  "series": "杂灵根散修录",
+  "category": "AI技术",
+  "summary": "终端内嵌的 Python 只能在本机验证想法，数据进不来、信号出不去，离自动化还隔着一步。",
+  "topics": [
+    "人工智能",
+    "AI Agent",
+    "编程",
+    "软件工程"
+  ],
+  "cover": "output\\articles\\covers\\cover-ai-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\[AI技术_003] 2026-11-12-sandbox-003.md",
+  "source_sha256": "afed839e66ac9b8c206053fec669c83a381883aa12ab5514d06132e8ac09f4ee",
+  "body_sha256": "32ef857770c3c34949c2099ed9c467fb07929e3d383bf8dc403b6532c100691d",
+  "exported_at": "2026-11-16T17:22:22+08:00",
+  "status": "exported",
+  "canonical": null,
+  "published_at": null,
+  "published": false,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  }
+}
