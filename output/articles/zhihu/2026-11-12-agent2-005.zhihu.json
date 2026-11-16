@@ -1,0 +1,30 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "把取数从回测 agent 里拆出来",
+  "slug": "agent2-005",
+  "date": "2026-11-12",
+  "series": "杂灵根散修录",
+  "category": "AI技术",
+  "summary": "把拉数从回测 agent 里拆出来，单独做一个只挂 6 个数据工具的 Agent 2，出错时才能分清是数据问题还是策略问题。",
+  "topics": [
+    "人工智能",
+    "AI Agent",
+    "编程"
+  ],
+  "cover": "output\\articles\\covers\\cover-ai-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\[AI技术_005] 2026-11-12-agent2-005.md",
+  "source_sha256": "7de47e985f7da0b0263e5bb174e274c742021ac40b0e3f3d420ea60e0a93a6b6",
+  "body_sha256": "27aaf6441c4ce67dd83706b0f5549974cddaf9b0dd37961be089218bfad88cd5",
+  "exported_at": "2026-11-16T17:40:43+08:00",
+  "status": "exported",
+  "canonical": null,
+  "published_at": null,
+  "published": false,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  }
+}

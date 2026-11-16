@@ -28,7 +28,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 DEFAULT_OUT_DIR = os.path.join(PROJECT_ROOT, "output", "articles", "zhihu")
 CST = timezone(timedelta(hours=8))
 
-MAX_TOPICS = 4
+MAX_TOPICS = 3
 TITLE_LIMIT = 100
 
 # 知乎版文末固定加的来源说明；源文已含这句时不重复加。
