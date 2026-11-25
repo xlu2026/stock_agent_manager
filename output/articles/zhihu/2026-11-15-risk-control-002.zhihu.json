@@ -1,0 +1,30 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "账号被限制的半小时",
+  "slug": "risk-control-002",
+  "date": "2026-11-15",
+  "series": "杂灵根散修录",
+  "category": "杂项",
+  "summary": "一次账号被限半小时的经过、三个可疑项，以及之后固定的四条发布纪律",
+  "topics": [
+    "独立思考",
+    "个人成长",
+    "效率工具"
+  ],
+  "cover": "output\\articles\\covers\\cover-misc-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\[杂项_002] 2026-11-15-risk-control-002.md",
+  "source_sha256": "8e67bc5ee545c8327b034f4ee825b3828e82f68e79a15ebd598e23f1c12b1802",
+  "body_sha256": "4be74ec0ce3a07300930feddbafd1f0c9f1ca291460b28cdaf0f835be918ab68",
+  "exported_at": "2026-11-25T10:20:38+08:00",
+  "status": "exported",
+  "canonical": null,
+  "published_at": null,
+  "published": false,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "拿今天的名单回测过去",
+  "slug": "survivorship-005",
+  "date": "2026-11-12",
+  "series": "杂灵根散修录",
+  "category": "量化研究",
+  "summary": "换成时点成分后，同一套因子下的基准年化从 7.94% 变成 -3.51%，名单偏差的方向和量级都得记下来。",
+  "topics": [
+    "量化交易",
+    "回测",
+    "因子模型"
+  ],
+  "cover": "output\\articles\\covers\\cover-quant-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\[量化研究_005] 2026-11-12-survivorship-005.md",
+  "source_sha256": "03ef47dfe42677fa68284f9eb3d4f29944c2e60ca6c2c68da5b6901696d3b141",
+  "body_sha256": "cbd9e31d6b8e42086ecec8ad4f9604c261593275e5f1d53469c538d29329f281",
+  "exported_at": "2026-11-25T10:20:38+08:00",
+  "status": "exported",
+  "canonical": null,
+  "published_at": null,
+  "published": false,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "被拦下来的那次回测",
+  "slug": "warmup-006",
+  "date": "2026-11-12",
+  "series": "杂灵根散修录",
+  "category": "AI技术",
+  "summary": "同一份快照，直接调引擎跑出过一份废对照，改走统一入口时被预热校验拦下。",
+  "topics": [
+    "人工智能",
+    "AI Agent",
+    "编程"
+  ],
+  "cover": "output\\articles\\covers\\cover-ai-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\[AI技术_006] 2026-11-12-warmup-006.md",
+  "source_sha256": "101b9959591dfa0ae662317c13f9c8df4718c462554b655d6eb97604c37605a2",
+  "body_sha256": "ecfabf5c207e3d0e397c62d34824bf37a35d28342cb40d13c52631dd407ccc5d",
+  "exported_at": "2026-11-25T10:20:38+08:00",
+  "status": "exported",
+  "canonical": null,
+  "published_at": null,
+  "published": false,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  }
+}

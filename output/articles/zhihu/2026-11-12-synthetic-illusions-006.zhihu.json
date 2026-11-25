@@ -1,0 +1,30 @@
+{
+  "schema": "nerve.platform/v1",
+  "platform": "zhihu",
+  "title": "合成数据的结论，搬不动",
+  "slug": "synthetic-illusions-006",
+  "date": "2026-11-12",
+  "series": "杂灵根散修录",
+  "category": "量化研究",
+  "summary": "同一引擎、同一区间、同一参数，只换数据跑四因子，四组结论方向相反或打折，结论不可迁移。",
+  "topics": [
+    "量化交易",
+    "回测",
+    "因子模型"
+  ],
+  "cover": "output\\articles\\covers\\cover-quant-2.35x1.png",
+  "source": "C:\\AI_workspace\\wechat_writing\\articles\\[量化研究_006] 2026-11-12-synthetic-illusions-006.md",
+  "source_sha256": "2e109adb5d2a048ce9833112933d9bb37ad512b62ec0dd219826be7ff555d07f",
+  "body_sha256": "3bea01cae0f54e82ca923afdb4151a5ffb3d82472c588ec860769b5a153ef904",
+  "exported_at": "2026-11-25T10:20:38+08:00",
+  "status": "exported",
+  "canonical": null,
+  "published_at": null,
+  "published": false,
+  "publish_api": "absent",
+  "compliance": {
+    "ok": true,
+    "disclaimer_version": "disclaimer-2026-11-v2",
+    "violations": []
+  }
+}
