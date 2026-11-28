@@ -1,4 +1,6 @@
-# 杂灵根散修录 · 量化研究 Agent（Phase 1 + 数据/执行链路）
+# 杂灵根散修录 · 因子研究记录
+
+[![GitHub](https://img.shields.io/badge/GitHub-factor--record-111)](https://github.com/xlu2026/factor-record)
 
 一个散户把“价值判断”写成可回测因子的公开实验。当前跑通四条链路：
 
