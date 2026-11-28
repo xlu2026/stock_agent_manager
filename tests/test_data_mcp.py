@@ -156,6 +156,80 @@ class RefreshValidationTests(unittest.TestCase):
         self.assertIsNone(result["job_id"])
         self.assertEqual(result["data_version"], "dv-" + "a" * 12)
 
+    def test_akshare_requires_base_dir(self) -> None:
+        with mock.patch.dict(os.environ, {"NFR_BAOSTOCK_PYTHON": sys.executable}, clear=False):
+            with self.assertRaises(ValueError):
+                data_mcp._tool_refresh_snapshot({"out_dir": self.out, "source": "akshare"})
+
+    def test_akshare_uses_base_snapshot_command(self) -> None:
+        base = os.path.join(self.dir, "base")
+        os.makedirs(base)
+        with open(os.path.join(base, "manifest.json"), "w", encoding="utf-8") as fh:
+            json.dump({"sha256": "a" * 64, "end": "2024-12-31", "universe": "u"}, fh)
+        fake = os.path.join(self.dir, "fake_akshare.py")
+        with open(fake, "w", encoding="utf-8") as fh:
+            fh.write("pass\n")
+        captured = {}
+
+        class _Proc:
+            pid = 1234
+
+        def _popen(cmd, **kwargs):
+            captured["cmd"] = cmd
+            return _Proc()
+
+        env = {
+            "NFR_BAOSTOCK_PYTHON": sys.executable,
+            "NFR_AKSHARE_EXPORT_SCRIPT": fake,
+            "NFR_DATA_JOB_DIR": os.path.join(self.dir, "jobs"),
+        }
+        with mock.patch.dict(os.environ, env, clear=False), mock.patch.object(
+            data_mcp.subprocess, "Popen", side_effect=_popen
+        ):
+            started = data_mcp._tool_refresh_snapshot(
+                {"out_dir": self.out, "base_dir": base, "source": "akshare", "min_coverage": 0.7}
+            )
+        self.assertEqual(started["state"], "queued")
+        cmd = captured["cmd"]
+        self.assertIn("--base-snapshot", cmd)
+        self.assertIn(base, cmd)
+        self.assertIn("--min-coverage", cmd)
+        self.assertIn("0.7", cmd)
+        self.assertNotIn("--index", cmd)
+
+    def test_bad_source_is_rejected(self) -> None:
+        with mock.patch.dict(os.environ, {"NFR_BAOSTOCK_PYTHON": sys.executable}, clear=False):
+            with self.assertRaises(ValueError):
+                data_mcp._tool_refresh_snapshot({"out_dir": self.out, "source": "qmt"})
+
+    def test_baostock_default_is_continuous(self) -> None:
+        base = os.path.join(self.dir, "base")
+        os.makedirs(base)
+        with open(os.path.join(base, "manifest.json"), "w", encoding="utf-8") as fh:
+            json.dump({"sha256": "a" * 64, "end": "2024-12-31", "universe": "u"}, fh)
+        fake = os.path.join(self.dir, "fake_export.py")
+        with open(fake, "w", encoding="utf-8") as fh:
+            fh.write("pass\n")
+        captured = {}
+
+        class _Proc:
+            pid = 1
+
+        def _popen(cmd, **kwargs):
+            captured["cmd"] = cmd
+            return _Proc()
+
+        env = {
+            "NFR_BAOSTOCK_PYTHON": sys.executable,
+            "NFR_EXPORT_SCRIPT": fake,
+            "NFR_DATA_JOB_DIR": os.path.join(self.dir, "jobs"),
+        }
+        with mock.patch.dict(os.environ, env, clear=False), mock.patch.object(
+            data_mcp.subprocess, "Popen", side_effect=_popen
+        ):
+            data_mcp._tool_refresh_snapshot({"out_dir": self.out, "base_dir": base, "end": "2025-01-02"})
+        self.assertIn("--continuous", captured["cmd"])
+
     def test_spawns_job_and_reports_failure(self) -> None:
         job_root = os.path.join(self.dir, "jobs")
         fake = os.path.join(self.dir, "fake_export.py")

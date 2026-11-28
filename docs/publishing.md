@@ -77,6 +77,7 @@ python scripts\publish.py done --platform wechat agent-approval-002
 
 ### 微信
 
+0. 先跑 `python scripts\wechat_check_ip.py`：0 = 出口 IP 已在白名单，2 = 需要加白名单（脚本会打印当前 IP）
 1. `prepare --push-wechat` 或 `push_draft.py --category` 推草稿
 2. 后台预览
 3. 勾原创 / AI 声明 / 合集（按卡片）
@@ -104,5 +105,7 @@ python scripts\publish.py done --platform wechat agent-approval-002
 - 写作日：只写，不发布
 - 发布日：`status` → `prepare` 一批 → 照卡片发 → `done` 回填
 - 每篇的“完成”定义：合规通过、导出未过期、封面/话题齐、URL 已回填
+- **单日不超过一篇**；同一台电脑、同一个网络出口；发布后不立刻编辑
+- 2026-11-15 因「设备切换 + 当天二更」触发过一次风控，细节见 `docs/wechat-account.md` §5.5
 
 这样不用每天重新想“发到哪了、还差什么”。

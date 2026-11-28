@@ -10,6 +10,7 @@
 - `NFR_SNAPSHOT_ROOT`      快照根目录（默认 `<repo>/snapshots`）
 - `NFR_BAOSTOCK_PYTHON`    装了 baostock 的解释器（刷新必需，例如 SmartX 自带的）
 - `NFR_EXPORT_SCRIPT`      导出脚本路径（默认 `<repo>/scripts/export_baostock_snapshot.py`）
+- `NFR_AKSHARE_EXPORT_SCRIPT` AkShare 导出脚本路径（`source=akshare` 时用）
 - `NFR_DATA_JOB_DIR`       作业状态目录（默认 `<repo>/output/data_jobs`）
 """
 from __future__ import annotations
@@ -94,6 +95,17 @@ def _exporter_script() -> str:
     return value
 
 
+def _akshare_script() -> str:
+    value = _setting(
+        "NFR_AKSHARE_EXPORT_SCRIPT",
+        "akshare_export_script",
+        os.path.join(ROOT, "scripts", "export_akshare_snapshot.py"),
+    )
+    if not os.path.exists(value):
+        raise RuntimeError(f"找不到 AkShare 导出脚本：{value}")
+    return value
+
+
 def _config_status() -> dict:
     return {
         "config_path": CONFIG_PATH,
@@ -127,7 +139,7 @@ def _manifest_info(dir_path: str) -> dict:
     sha = str(manifest.get("sha256") or "")
     return {
         "end": manifest.get("end"),
-        "data_version": "dv-" + sha[:12] if sha else None,
+        "data_version": manifest.get("data_version") or ("dv-" + sha[:12] if sha else None),
         "universe": manifest.get("universe"),
     }
 
@@ -273,7 +285,15 @@ def _tool_refresh_snapshot(args: dict) -> dict:
     if timeout <= 0:
         raise ValueError(f"timeout 必须大于 0：{timeout}")
 
+    source = str(args.get("source") or "baostock").lower()
+    if source not in {"baostock", "akshare"}:
+        raise ValueError(f"source 只支持 baostock / akshare：{source!r}")
+    if source == "akshare" and not base_dir:
+        raise ValueError("source=akshare 必须给 base_dir：复用它已有的标的/日历/成分")
+
     incremental = bool(args.get("incremental", bool(base_dir))) and bool(base_dir)
+    if source == "akshare":
+        incremental = False
     if incremental and base_dir:
         info = _manifest_info(base_dir)
         base_end = info.get("end")
@@ -290,28 +310,46 @@ def _tool_refresh_snapshot(args: dict) -> dict:
             }
 
     python = _exporter_python()
-    script = _exporter_script()
-    cmd = [
-        python,
-        script,
-        "--out",
-        out_dir,
-        "--universe",
-        str(args.get("universe") or DEFAULT_UNIVERSE),
-        "--index",
-        index,
-        "--sample",
-        str(sample),
-        "--start",
-        start,
-        "--end",
-        end,
-        "--fundamentals",
-        "--timeout",
-        str(timeout),
-    ]
-    if incremental:
-        cmd += ["--incremental", "--base-dir", base_dir]
+    if source == "akshare":
+        cmd = [
+            python,
+            _akshare_script(),
+            "--base-snapshot",
+            base_dir,
+            "--out",
+            out_dir,
+            "--min-coverage",
+            str(float(args.get("min_coverage", 0.8))),
+            "--retries",
+            str(int(args.get("retries", 2))),
+            "--delay",
+            "0.5",
+        ]
+    else:
+        script = _exporter_script()
+        cmd = [
+            python,
+            script,
+            "--out",
+            out_dir,
+            "--universe",
+            str(args.get("universe") or DEFAULT_UNIVERSE),
+            "--index",
+            index,
+            "--sample",
+            str(sample),
+            "--start",
+            start,
+            "--end",
+            end,
+            "--fundamentals",
+            "--timeout",
+            str(timeout),
+        ]
+        if incremental:
+            cmd += ["--incremental", "--base-dir", base_dir]
+        if bool(args.get("continuous", True)):
+            cmd.append("--continuous")
 
     job_id = f"job-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:4]}"
     job_dir = os.path.join(_job_root(), job_id)
@@ -322,6 +360,7 @@ def _tool_refresh_snapshot(args: dict) -> dict:
         "created_at": _now(),
         "out_dir": out_dir,
         "base_dir": base_dir,
+        "source": source,
         "end": end,
         "incremental": incremental,
         "timeout_seconds": float(args.get("timeout_seconds") or 0),
@@ -476,7 +515,20 @@ TOOLS: list[dict] = [
             "type": "object",
             "properties": {
                 "out_dir": {"type": "string", "description": "新快照目录（必须不存在或为空）"},
-                "base_dir": {"type": "string", "description": "增量所基于的旧快照目录（可选）"},
+                "base_dir": {"type": "string", "description": "增量所基于的旧快照目录（可选；akshare 必填）"},
+                "source": {
+                    "type": "string",
+                    "enum": ["baostock", "akshare"],
+                    "default": "baostock",
+                    "description": "数据源；akshare 需要 base_dir，复用其标的/日历/成分",
+                },
+                "continuous": {
+                    "type": "boolean",
+                    "default": True,
+                    "description": "baostock 用 preclose 链式连续价，修复除权日假跳空；默认 true",
+                },
+                "min_coverage": {"type": "number", "minimum": 0, "maximum": 1, "description": "akshare 覆盖率阈值，默认 0.8"},
+                "retries": {"type": "integer", "minimum": 1, "maximum": 5, "description": "akshare 单只重试次数，默认 2"},
                 "end": {"type": "string", "description": "结束日期 YYYY-MM-DD，默认今天"},
                 "incremental": {"type": "boolean", "description": "是否增量，默认给了 base_dir 就增量"},
                 "universe": {"type": "string"},

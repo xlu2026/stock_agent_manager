@@ -27,6 +27,25 @@ config/agent2.json
 # SmartX 账号/目录配置，只保留示例
 config/smartx.json
 
+# QMT 账户/目录配置，只保留示例
+config/qmt.json
+
+# QMT 生成物含账户号/本地路径，不进公开仓库
+output/qmt/
+
+# 本地回测/paper 运行产物（可由命令重建；公开记录看 experiments/ 与 reports/*.md）
+output/paper/
+output/validation/
+output/walk_forward/
+output/cost_sensitivity/
+output/reports/strategy_grid/
+output/reports/strategy_grid_2024/
+output/reports/strategy_robustness/
+output/reports/strategy_weights/
+output/reports/sweeps/
+output/reports/zhihu_articles.html
+output/reports/zhihu_articles_files/
+
 # 最新快照指针（运行时产物）
 output/data/
 

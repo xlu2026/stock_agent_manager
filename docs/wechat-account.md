@@ -38,6 +38,19 @@
 AppID 在页面开头，「开发密钥」里是 AppSecret（启用 / 重置）和 API IP 白名单。
 平台**不保存** AppSecret，忘了只能重置——这也是它必须落在 `.env` 里的原因。
 
+## 2.5 出口 IP 白名单（动态 IP）
+
+公众号接口按出口 IP 校验，动态宽带换一次 IP 就会报 `40164 invalid ip`。发布前先跑：
+
+```powershell
+python scripts\wechat_check_ip.py
+```
+
+- 退出码 0：已在白名单；
+- 退出码 2：打印当前 IP，把它加进「开发者平台 → 我的业务 → 公众号 → 基础信息 → 开发密钥 → API IP 白名单」。
+
+2026-11-16 至 11-28 之间出口 IP 换过三次（`171.223.68.112` → `171.223.64.250` → `171.223.64.146`），每次推送前都要重查。
+
 ## 3. 变现状态
 
 | 项目 | 状态 | 说明 |
@@ -96,6 +109,7 @@ AppID 在页面开头，「开发密钥」里是 AppSecret（启用 / 重置）�
 | 量化研究 004（**已发布**，2026-11-13） | 源文件 `C:\AI_workspace\wechat_writing\articles\[量化研究_004] 2026-11-12-qmt-shutdown-004.md`；草稿 media_id 见 `output/reports/drafts.jsonl`（发布后保留作历史） |
 | AI技术 002（**已发布**，2026-11-13） | 草稿 media_id `oQ7ed1ezuToxNUiewgDQh-9_AhBJHlDal1hBZoSsmL0wIXxkts4-TzQxAhdsf_FD`（发布后保留作历史）；封面沿用 `covers/cover-ai-2.35x1.png`（素材同上）；源文件 `C:\AI_workspace\wechat_writing\articles\[AI技术_002] 2026-11-08-agent-approval-002.md` |
 | AI技术 001（原开发日志 002，**已发布**） | 草稿 media_id `oQ7ed1ezuToxNUiewgDQhwTDo2stSy2m8M1cvkHj1lgY7VRVhRZZBqVuiGiRLDa_`（发布后已移出草稿箱）；封面素材 `oQ7ed1ezuToxNUiewgDQh1si_VbZa5a7HXKGqJKVQW4L32Jo38nl9zp9WnMB-pba`（源 `covers/cover-ai-2.35x1.png`）；源文件 `C:\AI_workspace\wechat_writing\articles\[AI技术_001] 2026-11-08-agent-to-draftbox-001.md` |
+| 市场复盘 001（**已发布 2026-11-15**） | 草稿 media_id `oQ7ed1ezuToxNUiewgDQh0B7AUqpyZuQv_ihYzXT99Nqfp6pJ7cVGPoAU1Hi_Mne`；封面素材 `oQ7ed1ezuToxNUiewgDQh_QDcQYLNUsDVCypSU9kFZaxBR0NAuxKBwV-ty6Fr-jH`（源 `covers/cover-market-2.35x1.png`） |
 | 封面源文件 | `output/articles/cover-opening-2.35x1.png`、`cover-opening-1x1.png` |
 | 栏目封面（4 组） | `output/articles/covers/cover-{quant,ai,market,misc}-{2.35x1,1x1}.png`（见 `docs/article-categories.md`） |
 | HTML 备份 | `output/articles/2026-11-07-opening.wechat.html` |
@@ -116,6 +130,25 @@ AppID 在页面开头，「开发密钥」里是 AppSecret（启用 / 重置）�
 - [x] **AI技术 002**：已发布（2026-11-13）；front matter 已补。
 - [ ] 在后台确认封面在列表卡片里的裁切效果（头图中间区域最安全）。
 - [ ] 流量主开通后：设置行业屏蔽（金融大类）+ 广告主屏蔽（点名校验）。
+
+
+## 5.5 风控与发布节奏（2026-11-15 起）
+
+2026-11-15 晚，账号出现「账号存在安全风险，已被限制使用」。后台查不到违规记录；
+走申诉，人脸识别通过后解封，全程约半小时。属于平台风控，不是内容处罚。
+
+当时的操作序列：当天发了两篇（AI技术 002、市场复盘 001），第二篇用电脑端发布，此前几次都用手机端。
+
+据此定四条发布纪律：
+
+1. **固定设备与网络**：同一台电脑、同一个网络出口；换设备或换网当天不发。
+2. **单日不超过一篇**：两篇之间至少隔 24 小时；已发一篇后不再改当天那篇。
+3. **发布后不立刻编辑**：改一次会触发一次审核，短时间内反复改容易被判异常。
+4. **发布前跑 publish.py status**，确认没有「导出过期」「合规未过」再动手。
+
+内容层面不用改：申诉结果是无违规记录，问题出在行为特征（设备切换 + 当天二更）。
+
+**内容侧风险单列一条（未证实，但要知道）**：被限当晚发的第二篇是市场复盘，含 A 股／美股／黄金／债券／REITs 的资产类别方向判断。个人主体号发证券投资相关内容本身是审核敏感区，可能被判为“投资建议”。它与“安全风险”提示不是同一个通道（内容违规通常有具体条目、会删文），但不能排除风控模型按内容打分叠加。验证方法：下一批先发非金融题材（AI技术），保持同设备、单日一篇；若不再被限，环境因素为主。
 
 ## 6. 变更记录
 
@@ -153,3 +186,7 @@ AppID 在页面开头，「开发密钥」里是 AppSecret（启用 / 重置）�
 | 2026-11-13 | AI技术 002（agent 下单）已发布；front matter 补 `status: published` / `published_at: 2026-11-13` |
 | 2026-11-13 | 量化研究 004（QMT 关掉之后）已发布；front matter 补 `status: published` / `published_at: 2026-11-13` |
 | 2026-11-12 | 新增 7 篇草稿（QMT 关停、沙箱、半自动、Agent 2、预热校验、名单偏差、合成数据结论）并更新 AI技术 002；media_id 见 `output/reports/drafts.jsonl` |
+| 2026-11-15 | 复盘类规则调整：允许大方向判断（不给具体标的与买卖点，须写依据与失效条件）；文风加三条（陈述句、禁「我觉得」、不用「散修」当主语）；市场复盘 001 写入草稿箱 |
+| 2026-11-15 | 账号被限「安全风险」，无违规记录；申诉 + 人脸识别后解封。定为设备/节奏问题，见 §5.5 |
+| 2026-11-16 | IP 白名单补 171.223.64.250；六篇按新文风重写并推送。AI技术 003/004 原草稿失效（40007），改为新建；其余覆盖更新 |
+| 2026-11-28 | 出口 IP 再变（`171.223.64.146`，已加白名单）；12 篇一次性进草稿箱（量化 007-013、AI 007-010、杂项 004） |

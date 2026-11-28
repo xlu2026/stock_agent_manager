@@ -27,6 +27,10 @@
          - `out_dir` 必须是**新目录**，用 `<基线目录>_<today 去掉横线>`，全 ASCII，且必须在
            `NFR_SNAPSHOT_ROOT` 之下；
          - `end` 省略即用 `today`；格式必须是 `YYYY-MM-DD`。
+         - `source` 默认 `baostock`；`source=akshare` 必须给 `base_dir`，复用基线的标的/日历/成分，
+           用于第二数据源交叉验证，不支持增量、也不会有 noop。
+         - baostock 默认 `continuous=true`（用 preclose 链式连续价，修复除权日假跳空）；
+           只有显式 `continuous=false` 才走旧复权收盘价。base 不是连续价时会回退全量。
          如果返回 `state=noop`，说明已经是最新，直接报告，不要轮询、不要重试。
       4. 用 `refresh_status` 轮询，**传 `wait_seconds`（建议 20–30）**让服务端阻塞等待状态变化，
          直到 `succeeded` 或 `failed`；不要连续快速调用。

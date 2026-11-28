@@ -12,6 +12,8 @@ if ROOT not in sys.path:
 from scripts.export_baostock_snapshot import (  # noqa: E402
     _asset,
     _asset_to_code,
+    _continuous_rows,
+    _extend_continuous,
     _fundamental_row,
     _latest_quarters,
     _merge_prices,
@@ -61,6 +63,47 @@ class HelperTests(unittest.TestCase):
 
 def _price_row(date: str, asset: str, close: float) -> list:
     return [date, asset, str(close), str(close), str(close), str(close), "100", "1.0"]
+
+
+class ContinuousPriceTests(unittest.TestCase):
+    def test_ex_dividend_uses_preclose_not_previous_close(self) -> None:
+        raw = [
+            ["2020-11-24", "10", "10.1", "9.9", "10.0", "10.0", "100"],
+            ["2020-11-25", "9.6", "9.7", "9.4", "9.5", "9.5", "100"],
+        ]
+        rows = _continuous_rows("600655.SH", raw)
+        # 除权日 close/preclose = 0，连续价不变；不是用 10.0 算出的 -5%
+        self.assertAlmostEqual(float(rows[0][5]), 10.0)
+        self.assertAlmostEqual(float(rows[1][5]), 10.0)
+        self.assertAlmostEqual(float(rows[1][2]), 10.0 * 9.6 / 9.5)
+
+    def test_daily_return_is_continuous(self) -> None:
+        raw = [
+            ["2024-01-02", "10", "10", "10", "10", "10", "1"],
+            ["2024-01-03", "11", "11", "11", "11", "10", "1"],
+        ]
+        rows = _continuous_rows("AAA", raw)
+        self.assertAlmostEqual(float(rows[1][5]) / float(rows[0][5]) - 1, 0.1)
+
+
+    def test_continuous_increment_uses_base_close(self) -> None:
+        old = [["2024-01-02", "A", "10", "10", "10", "10", "1", "1.0"]]
+        raw = [
+            ["2024-01-02", "10", "10", "10", "10", "10", "1"],
+            ["2024-01-03", "11", "11", "11", "11", "10", "1"],
+        ]
+        new = _extend_continuous(old, {"A": raw}, "2024-01-02")
+        self.assertEqual(len(new), 1)
+        self.assertAlmostEqual(float(new[0][5]), 11.0)
+
+    def test_continuous_increment_ex_dividend(self) -> None:
+        old = [["2024-01-02", "A", "10", "10", "10", "10", "1", "1.0"]]
+        raw = [
+            ["2024-01-02", "10", "10", "10", "10", "10", "1"],
+            ["2024-01-03", "9.5", "9.5", "9.5", "9.5", "9.5", "1"],
+        ]
+        new = _extend_continuous(old, {"A": raw}, "2024-01-02")
+        self.assertAlmostEqual(float(new[0][5]), 10.0)
 
 
 class IncrementalHelperTests(unittest.TestCase):

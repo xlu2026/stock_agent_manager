@@ -186,9 +186,9 @@
       "check": "13. 发布台（status 只读，无浏览器/发布面）",
       "ok": true,
       "detail": {
-        "articles": 13,
-        "wechat_published": 7,
-        "zhihu_published": 1,
+        "articles": 28,
+        "wechat_published": 15,
+        "zhihu_published": 10,
         "forbidden_hits": []
       }
     }

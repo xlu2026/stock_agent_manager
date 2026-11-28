@@ -34,12 +34,12 @@ def write_pointer(snapshot_dir: str, job_id: str | None = None) -> dict:
     with open(manifest_path, encoding="utf-8") as fh:
         manifest = json.load(fh)
     sha = str(manifest.get("sha256") or "")
-    if not sha:
-        raise ValueError(f"快照 manifest 缺少 sha256：{manifest_path}")
+    if not sha and not manifest.get("data_version"):
+        raise ValueError(f"快照 manifest 缺少 sha256/data_version：{manifest_path}")
     notes = manifest.get("notes") or {}
     payload = {
         "schema": SCHEMA,
-        "data_version": "dv-" + sha[:12],
+        "data_version": manifest.get("data_version") or ("dv-" + sha[:12]),
         "dir": os.path.abspath(snapshot_dir),
         "universe": manifest.get("universe"),
         "start": manifest.get("start"),

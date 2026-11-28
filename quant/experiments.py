@@ -101,6 +101,8 @@ def save(bt: Backtest) -> dict:
                         "experiment_id": bt.experiment_id,
                         "recorded_utc": now,
                         "factor": bt.spec.factor,
+                        "strategy": bt.spec.strategy,
+                        "params": bt.spec.params,
                         "window": f"{bt.spec.start}..{bt.spec.end}",
                         "cagr": bt.metrics["cagr"],
                         "sharpe": bt.metrics["sharpe"],

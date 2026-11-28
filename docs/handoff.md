@@ -17,7 +17,7 @@ Agent 2 数据刷新、Agent 3 写作、发布台也已落地。
 执行侧停在 SmartX CSV 半自动——能生成 CSV、能自动导出对账，下单确认仍需人工点。
 细节见 `docs/smartx-execution.md`。
 
-当前规模：**215 项单测、14 项验收、MCP 14 个工具（research 模式 10 个）+ 6 个 data 工具**，全绿。
+当前规模：**293 项单测、14 项验收、MCP 14 个工具（research 模式 10 个）+ 6 个 data 工具**，全绿。
 
 ---
 
@@ -32,6 +32,18 @@ Agent 2 数据刷新、Agent 3 写作、发布台也已落地。
 | 5 | `docs/smartx-execution.md` | 执行侧实测：CSV 下单/撤单、字段对照、未决问题 |
 | 6 | `README.md` | 快速开始 |
 | 7 | `docs/agent-prompt-guide.md` | 给三个 Agent 写提示词的模板与反例 |
+| 8 | `docs/qmt-investigation.md` | QMT 信创模拟交易端：数据/下单/xtquant 现状 |
+| 9 | `docs/data-sources.md` | 第二数据源 AkShare 与 baostock 交叉验证结果 |
+| 10 | `docs/qmt-deployment.md` | QMT 策略生成/投递：做到哪、怎么人工导入 |
+| 11 | `docs/qmt-alignment-decision.md` | QMT 对齐决策：接受 4.22% 跟踪误差，不追两阶段 |
+| 12 | `docs/strategy-validation.md` | P0 样本外验证：训练选参失效，固定低波 50/50 最稳 |
+| 13 | `docs/paper-tracking.md` | 模拟盘前向跟踪：paper 版、每日记录、验收标准 |
+| 14 | `docs/review-2026-11-28.md` | 三个优化点复盘：状态、缺口、应补的项目资产 |
+| 15 | `docs/metrics-and-benchmarks.md` | 基准/Sharpe/超额/成本口径（先看这个） |
+| 16 | `docs/research-playbook.md` | 预注册→训练/测试→walk-forward→成本→结论等级 |
+| 17 | `docs/data-runbook.md` | 数据刷新、体检、rehash、双源、QMT bars |
+| 18 | `docs/execution-runbook.md` | QMT 回测/paper 启停、异常、版本 |
+| 19 | `docs/experiment-ledger.md` | 关键试验与采纳/拒绝记录 |
 
 公众号账号状态（接口权限、白名单、变现）在 `docs/wechat-account.md`，与本仓库开发解耦。
 公众号之外的平台矩阵、知乎导出与发布记录在 `docs/platforms.md`；日常发布流程见 `docs/publishing.md`。
@@ -45,6 +57,25 @@ Agent 2 数据刷新、Agent 3 写作、发布台也已落地。
 | 确定回测引擎（4 因子、成本、基准、指标、IC） | `quant/engine.py` `quant/factors.py` | ✅ 可复现（`nav_hash`） |
 | 四字段研究指令契约（自然语言 → 因子） | `quant/instruction.py` | ✅ 模型不能自选因子 |
 | MCP 服务端 | `quant/mcp_server.py` | ✅ 14 个工具；Agent 1 profile 用 `--toolset research`（10 个） |
+| 策略注册表（P0，2026-11-25） | `quant/strategies/` `quant/spec.py` `quant/engine.py` | ✅ 3 个策略；旧 `factor` 路径 nav_hash 不变 |
+| 第二数据源（P1，2026-11-25） | `quant/providers/akshare.py` `scripts/export_akshare_snapshot.py` `scripts/compare_snapshots.py` | ⚠️ 30/40 只、p95 0.15%、002085 异常；未切主源 |
+| 连续总收益价（P1，2026-11-25） | `scripts/export_baostock_snapshot.py --continuous` `scripts/rebuild_continuous_snapshot.py` | ✅ 修复除权日假跳空；支持增量；正式快照全文件版本 `dv-91efdffbf9fe` |
+| Agent 2 多数据源（P1，2026-11-25） | `quant/data_mcp.py` | ✅ `source=baostock/akshare`，baostock 默认 `continuous=true`；akshare 需 base_dir |
+| 核心实验重跑（2026-11-26） | `output/reports/core_rerun_comparison.*` | ✅ 两条真实动量新旧 CAGR 差约 -0.02pp，方向不变 |
+| 多因子/参数化网格（2026-11-26） | `output/reports/strategy_grid_comparison.*` | 🧪 低波/价值组合四区间优于基准；短周期动量更差；未做多重检验 |
+| 数据源收尾（2026-11-26） | `quant/providers/akshare.py` `quant/providers/sources.py` `scripts/compare_snapshots.py` | ⚠️ 38/40；002085 已解决；财报口径不可互验；无历史 PIT |
+| 全文件 data_version（2026-11-26） | `quant/providers/contract.py` `quant/data.py` `scripts/rehash_snapshot.py` | ✅ fundamentals 变化会换 `dv`；旧快照走 prices-only |
+| QMT 策略生成/投递（2026-11-28） | `quant/deploy/qmt.py` `scripts/deploy_qmt.py` `config/qmt.json` | ✅ 生成并复制 `.py`；账户从配置读；已加 PIT 成分/月末调仓/25% 上限；注册仍需人工 |
+| QMT 回测截图分析（2026-11-28） | `output/reports/qmt_backtest_analysis.md` | ⚠️ 旧文件选出未上市标的+当日信号；已修，待重跑 |
+| QMT 对齐决策（2026-11-28） | `docs/qmt-alignment-decision.md` | ✅ 冻结手工 `_equity` 版 sha `089dfd...`；接受 4.22% TE |
+| QMT NAV 对账/数据回灌（2026-11-28） | `scripts/compare_qmt_nav.py` `scripts/import_qmt_bars.py` | ✅ QMT 日频 NAV 对比；QMT bars 导入 v2 快照 |
+| P0 样本外验证（2026-11-28） | `docs/strategy-validation.md` `output/reports/p0_validation.json` | ⚠️ 训练选参失效；低波 50/50 top8 测试 +10.6%/Sharpe .72，仅一个测试区间 |
+| 滚动 walk-forward（2026-11-28） | `output/reports/walk_forward_validation.json` | ✅ 选参继续失效；固定 inverse_vol 50/50 top8 四年链式 +62.37%，每年正超额 |
+| 模拟盘准备（2026-11-28） | `docs/paper-tracking.md` `output/qmt/nfr_mom_lowvol_paper.py` | ✅ 数据刷到 2026-11-27；paper 版 sha `9766768f...`；待 12-01 启动 |
+| 三优化点复盘（2026-11-28） | `docs/review-2026-11-28.md` | ⚠️ 基准/财报 PIT/paper 数据不一致仍是 P0；建议补 5 份 runbook/模板 |
+| 项目资产补齐（2026-11-28） | `docs/metrics-and-benchmarks.md` 等 5 份 | ✅ 基准/playbook/数据/执行/账本 + 3 模板已落盘 |
+| 成本敏感性（2026-11-28） | `output/reports/cost_sensitivity.md` | ✅ 10–50bp 超额 +9.30→+8.30pp；BH 不显著 |
+| 组合构造器/参数网格（2026-11-26） | `quant/portfolio.py` `quant/sweeps.py` `scripts/run_sweep.py` | ✅ equal/score/inverse_vol/vol_target；BH 多重检验 |
 | 实验登记簿 | `quant/experiments.py` `experiments/` | ✅ 公开记录持仓已脱敏；代码在 `experiments/.private/` |
 | 模拟盘 + 券商抽象层 | `quant/paper.py` `quant/broker/` | ✅ 只有 PaperBroker |
 | 下单三段式（提案 → 人工批准 → 提交） | `quant/broker/proposals.py` `approve.py` | ✅ 已实测 |
@@ -116,7 +147,7 @@ Agent 2 数据刷新、Agent 3 写作、发布台也已落地。
 | `dsh` 命令找不到 | 不在 PATH | 用全路径 `...\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd` |
 | 盘中刷新后快照整份加载失败 | 交易日历已含“今天”，但当天行情未生成，`calendar.csv` 末尾一天无报价 | 导出器已把日历/成分裁到最后一个有行情的日期（`calendar_trimmed` 写进 notes）；旧快照需重刷 |
 | 下单被拒“价格超出涨跌停范围” | 用了后复权快照价（601939 快照 30.3099，名义收盘 11.92） | 下单前跑 `scripts/fetch_quotes.py` 取不复权价，生成 CSV 必须带 `--quotes` |
-| 两个内容不同的快照 `dv` 相同 | `manifest.sha256` 目前只覆盖 `prices.csv`，`calendar/universe` 变化不改变 `dv` | 已知问题；复现时同时核对 `files.*.sha256`，待改成全文件哈希 |
+| 两个内容不同的快照 `dv` 相同 | 旧 manifest 的 `sha256` 只覆盖 `prices.csv` | 2026-11-26 起新快照有 `snapshot_sha256`（全文件）；旧快照仍按 prices-only，复现时同时核对 `files.*.sha256` |
 | `dsh headless` 用不了 preset | 源码硬限制（headless 不消费 preset） | 用 profile 级隔离 |
 | 微信错误被判成"成功" | HTTP 200 + body 里带 errcode | `probe_draft_api` 已按 errcode 分类，别再改回去 |
 | 沙箱里跑测试全红 `PermissionError` | Python 3.12 的 `tempfile.mkdtemp` 在 Windows 建出仅所有者可访问的目录，沙箱令牌进不去；与代码无关 | 用完整权限（full access）跑，或在用户自己的终端里跑；不要为此改测试 |

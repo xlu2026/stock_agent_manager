@@ -21,9 +21,14 @@ FACTORS = {
 }
 
 REBALANCE = {"M": "月末", "W": "周末", "Q": "季末"}
-WEIGHTING = {"equal": "等权"}
+WEIGHTING = {
+    "equal": "等权",
+    "score": "按得分加权",
+    "inverse_vol": "按 60 日波动倒数加权（单票上限 25%）",
+    "vol_target": "等权后按 15% 年化目标波动缩放（不加杠杆）",
+}
 
-REQUIRED = ("factor", "universe", "start", "end")
+REQUIRED = ("universe", "start", "end")
 OPTIONAL: dict[str, Any] = {
     "rebalance": "M",
     "top_k": 10,
@@ -33,6 +38,7 @@ OPTIONAL: dict[str, Any] = {
     "data_version": None,
     "spec_version": SPEC_VERSION,
 }
+KNOWN = set(REQUIRED) | set(OPTIONAL) | {"factor", "strategy", "params"}
 
 
 class SpecError(ValueError):
@@ -52,13 +58,39 @@ class Spec:
     seed: int = 42
     data_version: str | None = None
     spec_version: str = SPEC_VERSION
+    strategy: str = "single_factor"
+    params: dict[str, Any] = field(default_factory=dict, compare=False)
+    strategy_version: str = ""
     extra: dict[str, Any] = field(default_factory=dict, compare=False)
 
     def canonical(self) -> dict[str, Any]:
-        """去掉未参与计算的字段后排序，用于计算可复现指纹。"""
-        body = {
+        """去掉未参与计算的字段后排序，用于计算可复现指纹。
+
+        旧 spec（只有 factor、没有额外参数）必须保持原来的字段集，
+        否则已有实验 ID 会全部漂移；新策略才加 strategy/params/version。
+        """
+        legacy = self.strategy == "single_factor" and (
+            not self.params or self.params == {"factor": self.factor}
+        )
+        if legacy:
+            return {
+                "spec_version": self.spec_version,
+                "factor": self.factor,
+                "universe": self.universe,
+                "start": self.start,
+                "end": self.end,
+                "rebalance": self.rebalance,
+                "top_k": self.top_k,
+                "weighting": self.weighting,
+                "cost_bps": self.cost_bps,
+                "seed": self.seed,
+                "data_version": self.data_version,
+            }
+        return {
             "spec_version": self.spec_version,
-            "factor": self.factor,
+            "strategy": self.strategy,
+            "strategy_version": self.strategy_version,
+            "params": self.params,
             "universe": self.universe,
             "start": self.start,
             "end": self.end,
@@ -69,7 +101,11 @@ class Spec:
             "seed": self.seed,
             "data_version": self.data_version,
         }
-        return body
+
+    def is_legacy_single_factor(self) -> bool:
+        return self.strategy == "single_factor" and (
+            not self.params or self.params == {"factor": self.factor}
+        )
 
     def fingerprint(self, data_sha256: str) -> str:
         payload = json.dumps(
@@ -97,7 +133,7 @@ def parse_spec(raw: dict[str, Any] | str) -> Spec:
     if not isinstance(raw, dict):
         raise SpecError("spec 必须是 JSON 对象")
 
-    known = set(REQUIRED) | set(OPTIONAL)
+    known = KNOWN
     unknown = sorted(set(raw) - known)
     if unknown:
         raise SpecError(f"出现未知字段 {unknown}；可用字段：{sorted(known)}")
@@ -107,11 +143,28 @@ def parse_spec(raw: dict[str, Any] | str) -> Spec:
         raise SpecError(f"缺少必填字段 {missing}")
 
     merged = dict(OPTIONAL)
-    merged.update({k: raw[k] for k in known if k in raw})
+    merged.update({k: raw[k] for k in known if k in raw and k not in ("factor", "strategy", "params")})
 
-    factor = _require_str(merged, "factor")
-    if factor not in FACTORS:
-        raise SpecError(f"未知因子 {factor!r}；可用：{sorted(FACTORS)}")
+    from .strategies import StrategyError, get as get_strategy, validate_params
+
+    if "strategy" in raw:
+        if "factor" in raw:
+            raise SpecError("strategy 与 factor 只能给一个；旧写法用 factor，新写法用 strategy + params")
+        strategy = _require_str(raw, "strategy")
+        try:
+            params = validate_params(strategy, raw.get("params", {}))
+        except StrategyError as exc:
+            raise SpecError(str(exc)) from exc
+        info = get_strategy(strategy)
+        factor = str(params.get("factor") or "") if strategy == "single_factor" else ""
+    else:
+        factor = _require_str(raw, "factor")
+        strategy = "single_factor"
+        try:
+            params = validate_params(strategy, {"factor": factor})
+        except StrategyError as exc:
+            raise SpecError(str(exc)) from exc
+        info = get_strategy(strategy)
 
     universe = _require_str(merged, "universe")
     start = _require_str(merged, "start")
@@ -160,4 +213,7 @@ def parse_spec(raw: dict[str, Any] | str) -> Spec:
         seed=seed,
         data_version=merged["data_version"],
         spec_version=spec_version,
+        strategy=strategy,
+        params=params,
+        strategy_version=info.version,
     )

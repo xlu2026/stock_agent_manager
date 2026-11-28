@@ -1,8 +1,8 @@
 {
   "experiment_id": "exp-a359c2d77697",
   "first_recorded_utc": "2026-11-07T02:40:54+00:00",
-  "last_run_utc": "2026-11-09T10:01:50+00:00",
-  "runs": 55,
+  "last_run_utc": "2026-11-28T09:01:27+00:00",
+  "runs": 128,
   "status": "completed",
   "spec": {
     "spec_version": "1.0",
@@ -120,16 +120,6 @@
       "fill_price": "next_open",
       "turnover": 0.5,
       "cost_bps": 10.0,
-      "names": [
-        "SYN003",
-        "SYN002",
-        "SYN019",
-        "SYN006",
-        "SYN018",
-        "SYN031",
-        "SYN037",
-        "SYN026"
-      ],
       "count": 8
     },
     {
@@ -138,16 +128,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN018",
-        "SYN003",
-        "SYN037",
-        "SYN019",
-        "SYN006",
-        "SYN023",
-        "SYN002",
-        "SYN014"
-      ],
       "count": 8
     },
     {
@@ -156,16 +136,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN037",
-        "SYN018",
-        "SYN006",
-        "SYN003",
-        "SYN019",
-        "SYN014",
-        "SYN023",
-        "SYN009"
-      ],
       "count": 8
     },
     {
@@ -174,16 +144,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN037",
-        "SYN018",
-        "SYN006",
-        "SYN019",
-        "SYN028",
-        "SYN003",
-        "SYN009",
-        "SYN026"
-      ],
       "count": 8
     },
     {
@@ -192,16 +152,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN037",
-        "SYN019",
-        "SYN006",
-        "SYN018",
-        "SYN031",
-        "SYN014",
-        "SYN009",
-        "SYN003"
-      ],
       "count": 8
     },
     {
@@ -210,16 +160,6 @@
       "fill_price": "next_open",
       "turnover": 0.375,
       "cost_bps": 10.0,
-      "names": [
-        "SYN037",
-        "SYN019",
-        "SYN006",
-        "SYN018",
-        "SYN014",
-        "SYN029",
-        "SYN028",
-        "SYN036"
-      ],
       "count": 8
     },
     {
@@ -228,16 +168,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN037",
-        "SYN019",
-        "SYN029",
-        "SYN018",
-        "SYN006",
-        "SYN014",
-        "SYN032",
-        "SYN036"
-      ],
       "count": 8
     },
     {
@@ -246,16 +176,6 @@
       "fill_price": "next_open",
       "turnover": 0.375,
       "cost_bps": 10.0,
-      "names": [
-        "SYN037",
-        "SYN019",
-        "SYN029",
-        "SYN018",
-        "SYN010",
-        "SYN026",
-        "SYN027",
-        "SYN032"
-      ],
       "count": 8
     },
     {
@@ -264,16 +184,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN037",
-        "SYN029",
-        "SYN027",
-        "SYN019",
-        "SYN010",
-        "SYN034",
-        "SYN016",
-        "SYN026"
-      ],
       "count": 8
     },
     {
@@ -282,16 +192,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN037",
-        "SYN029",
-        "SYN027",
-        "SYN034",
-        "SYN010",
-        "SYN016",
-        "SYN030",
-        "SYN019"
-      ],
       "count": 8
     },
     {
@@ -300,16 +200,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN037",
-        "SYN027",
-        "SYN029",
-        "SYN034",
-        "SYN016",
-        "SYN010",
-        "SYN030",
-        "SYN012"
-      ],
       "count": 8
     },
     {
@@ -318,16 +208,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN027",
-        "SYN029",
-        "SYN034",
-        "SYN010",
-        "SYN012",
-        "SYN016",
-        "SYN038",
-        "SYN026"
-      ],
       "count": 8
     },
     {
@@ -336,16 +216,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN029",
-        "SYN027",
-        "SYN034",
-        "SYN038",
-        "SYN012",
-        "SYN026",
-        "SYN010",
-        "SYN030"
-      ],
       "count": 8
     },
     {
@@ -354,16 +224,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN029",
-        "SYN038",
-        "SYN027",
-        "SYN034",
-        "SYN030",
-        "SYN016",
-        "SYN026",
-        "SYN012"
-      ],
       "count": 8
     },
     {
@@ -372,16 +232,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN029",
-        "SYN038",
-        "SYN027",
-        "SYN034",
-        "SYN030",
-        "SYN023",
-        "SYN012",
-        "SYN004"
-      ],
       "count": 8
     },
     {
@@ -390,16 +240,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN004",
-        "SYN038",
-        "SYN029",
-        "SYN027",
-        "SYN023",
-        "SYN012",
-        "SYN017",
-        "SYN034"
-      ],
       "count": 8
     },
     {
@@ -408,16 +248,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN004",
-        "SYN029",
-        "SYN027",
-        "SYN023",
-        "SYN038",
-        "SYN005",
-        "SYN017",
-        "SYN009"
-      ],
       "count": 8
     },
     {
@@ -426,16 +256,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN004",
-        "SYN005",
-        "SYN038",
-        "SYN027",
-        "SYN008",
-        "SYN009",
-        "SYN023",
-        "SYN012"
-      ],
       "count": 8
     },
     {
@@ -444,16 +264,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN004",
-        "SYN027",
-        "SYN005",
-        "SYN008",
-        "SYN009",
-        "SYN023",
-        "SYN015",
-        "SYN016"
-      ],
       "count": 8
     },
     {
@@ -462,16 +272,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN004",
-        "SYN008",
-        "SYN005",
-        "SYN027",
-        "SYN038",
-        "SYN009",
-        "SYN015",
-        "SYN023"
-      ],
       "count": 8
     },
     {
@@ -480,16 +280,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN004",
-        "SYN008",
-        "SYN027",
-        "SYN015",
-        "SYN005",
-        "SYN001",
-        "SYN021",
-        "SYN009"
-      ],
       "count": 8
     },
     {
@@ -498,16 +288,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN004",
-        "SYN008",
-        "SYN015",
-        "SYN027",
-        "SYN021",
-        "SYN005",
-        "SYN001",
-        "SYN038"
-      ],
       "count": 8
     },
     {
@@ -516,16 +296,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN008",
-        "SYN004",
-        "SYN015",
-        "SYN021",
-        "SYN027",
-        "SYN001",
-        "SYN035",
-        "SYN005"
-      ],
       "count": 8
     },
     {
@@ -534,16 +304,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN008",
-        "SYN035",
-        "SYN021",
-        "SYN015",
-        "SYN004",
-        "SYN027",
-        "SYN002",
-        "SYN014"
-      ],
       "count": 8
     },
     {
@@ -552,16 +312,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN035",
-        "SYN008",
-        "SYN021",
-        "SYN015",
-        "SYN027",
-        "SYN014",
-        "SYN040",
-        "SYN002"
-      ],
       "count": 8
     },
     {
@@ -570,16 +320,6 @@
       "fill_price": "next_open",
       "turnover": 0.0,
       "cost_bps": 10.0,
-      "names": [
-        "SYN035",
-        "SYN008",
-        "SYN015",
-        "SYN021",
-        "SYN027",
-        "SYN040",
-        "SYN002",
-        "SYN014"
-      ],
       "count": 8
     },
     {
@@ -588,16 +328,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN035",
-        "SYN008",
-        "SYN021",
-        "SYN015",
-        "SYN001",
-        "SYN040",
-        "SYN027",
-        "SYN002"
-      ],
       "count": 8
     },
     {
@@ -606,16 +336,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN035",
-        "SYN021",
-        "SYN015",
-        "SYN040",
-        "SYN008",
-        "SYN001",
-        "SYN022",
-        "SYN027"
-      ],
       "count": 8
     },
     {
@@ -624,16 +344,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN035",
-        "SYN021",
-        "SYN040",
-        "SYN015",
-        "SYN001",
-        "SYN008",
-        "SYN020",
-        "SYN002"
-      ],
       "count": 8
     },
     {
@@ -642,16 +352,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN035",
-        "SYN021",
-        "SYN040",
-        "SYN015",
-        "SYN036",
-        "SYN001",
-        "SYN007",
-        "SYN002"
-      ],
       "count": 8
     },
     {
@@ -660,16 +360,6 @@
       "fill_price": "next_open",
       "turnover": 0.0,
       "cost_bps": 10.0,
-      "names": [
-        "SYN035",
-        "SYN021",
-        "SYN040",
-        "SYN036",
-        "SYN015",
-        "SYN002",
-        "SYN001",
-        "SYN007"
-      ],
       "count": 8
     },
     {
@@ -678,16 +368,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN035",
-        "SYN040",
-        "SYN021",
-        "SYN036",
-        "SYN002",
-        "SYN016",
-        "SYN001",
-        "SYN020"
-      ],
       "count": 8
     },
     {
@@ -696,16 +376,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN035",
-        "SYN040",
-        "SYN021",
-        "SYN016",
-        "SYN036",
-        "SYN002",
-        "SYN018",
-        "SYN020"
-      ],
       "count": 8
     },
     {
@@ -714,16 +384,6 @@
       "fill_price": "next_open",
       "turnover": 0.0,
       "cost_bps": 10.0,
-      "names": [
-        "SYN035",
-        "SYN040",
-        "SYN016",
-        "SYN036",
-        "SYN021",
-        "SYN018",
-        "SYN002",
-        "SYN020"
-      ],
       "count": 8
     },
     {
@@ -732,16 +392,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN035",
-        "SYN040",
-        "SYN016",
-        "SYN005",
-        "SYN002",
-        "SYN018",
-        "SYN020",
-        "SYN030"
-      ],
       "count": 8
     },
     {
@@ -750,16 +400,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN016",
-        "SYN035",
-        "SYN040",
-        "SYN020",
-        "SYN005",
-        "SYN030",
-        "SYN039",
-        "SYN036"
-      ],
       "count": 8
     },
     {
@@ -768,16 +408,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN035",
-        "SYN016",
-        "SYN040",
-        "SYN005",
-        "SYN039",
-        "SYN020",
-        "SYN007",
-        "SYN036"
-      ],
       "count": 8
     },
     {
@@ -786,16 +416,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN005",
-        "SYN016",
-        "SYN040",
-        "SYN035",
-        "SYN039",
-        "SYN007",
-        "SYN036",
-        "SYN024"
-      ],
       "count": 8
     },
     {
@@ -804,16 +424,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN005",
-        "SYN016",
-        "SYN039",
-        "SYN024",
-        "SYN035",
-        "SYN036",
-        "SYN007",
-        "SYN020"
-      ],
       "count": 8
     },
     {
@@ -822,16 +432,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN005",
-        "SYN016",
-        "SYN039",
-        "SYN024",
-        "SYN030",
-        "SYN026",
-        "SYN036",
-        "SYN007"
-      ],
       "count": 8
     },
     {
@@ -840,16 +440,6 @@
       "fill_price": "next_open",
       "turnover": 0.0,
       "cost_bps": 10.0,
-      "names": [
-        "SYN005",
-        "SYN039",
-        "SYN026",
-        "SYN030",
-        "SYN016",
-        "SYN024",
-        "SYN036",
-        "SYN007"
-      ],
       "count": 8
     },
     {
@@ -858,16 +448,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN005",
-        "SYN026",
-        "SYN039",
-        "SYN030",
-        "SYN016",
-        "SYN037",
-        "SYN024",
-        "SYN007"
-      ],
       "count": 8
     },
     {
@@ -876,16 +456,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN026",
-        "SYN030",
-        "SYN005",
-        "SYN039",
-        "SYN037",
-        "SYN024",
-        "SYN019",
-        "SYN007"
-      ],
       "count": 8
     },
     {
@@ -894,16 +464,6 @@
       "fill_price": "next_open",
       "turnover": 0.0,
       "cost_bps": 10.0,
-      "names": [
-        "SYN026",
-        "SYN030",
-        "SYN039",
-        "SYN005",
-        "SYN037",
-        "SYN019",
-        "SYN007",
-        "SYN024"
-      ],
       "count": 8
     },
     {
@@ -912,16 +472,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN026",
-        "SYN030",
-        "SYN039",
-        "SYN037",
-        "SYN019",
-        "SYN004",
-        "SYN009",
-        "SYN007"
-      ],
       "count": 8
     },
     {
@@ -930,16 +480,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN026",
-        "SYN030",
-        "SYN038",
-        "SYN019",
-        "SYN004",
-        "SYN039",
-        "SYN009",
-        "SYN037"
-      ],
       "count": 8
     },
     {
@@ -948,16 +488,6 @@
       "fill_price": "next_open",
       "turnover": 0.0,
       "cost_bps": 10.0,
-      "names": [
-        "SYN009",
-        "SYN019",
-        "SYN026",
-        "SYN038",
-        "SYN004",
-        "SYN030",
-        "SYN039",
-        "SYN037"
-      ],
       "count": 8
     },
     {
@@ -966,16 +496,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN009",
-        "SYN019",
-        "SYN038",
-        "SYN004",
-        "SYN030",
-        "SYN026",
-        "SYN027",
-        "SYN039"
-      ],
       "count": 8
     },
     {
@@ -984,16 +504,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN009",
-        "SYN019",
-        "SYN004",
-        "SYN038",
-        "SYN026",
-        "SYN030",
-        "SYN027",
-        "SYN025"
-      ],
       "count": 8
     },
     {
@@ -1002,16 +512,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN019",
-        "SYN009",
-        "SYN004",
-        "SYN027",
-        "SYN026",
-        "SYN025",
-        "SYN039",
-        "SYN003"
-      ],
       "count": 8
     },
     {
@@ -1020,16 +520,6 @@
       "fill_price": "next_open",
       "turnover": 0.375,
       "cost_bps": 10.0,
-      "names": [
-        "SYN019",
-        "SYN009",
-        "SYN027",
-        "SYN004",
-        "SYN023",
-        "SYN025",
-        "SYN013",
-        "SYN036"
-      ],
       "count": 8
     },
     {
@@ -1038,16 +528,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN019",
-        "SYN027",
-        "SYN004",
-        "SYN013",
-        "SYN023",
-        "SYN010",
-        "SYN009",
-        "SYN025"
-      ],
       "count": 8
     },
     {
@@ -1056,16 +536,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN010",
-        "SYN013",
-        "SYN027",
-        "SYN019",
-        "SYN023",
-        "SYN036",
-        "SYN025",
-        "SYN032"
-      ],
       "count": 8
     },
     {
@@ -1074,16 +544,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN010",
-        "SYN027",
-        "SYN013",
-        "SYN033",
-        "SYN023",
-        "SYN032",
-        "SYN025",
-        "SYN036"
-      ],
       "count": 8
     },
     {
@@ -1092,16 +552,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN010",
-        "SYN027",
-        "SYN032",
-        "SYN028",
-        "SYN025",
-        "SYN013",
-        "SYN036",
-        "SYN034"
-      ],
       "count": 8
     },
     {
@@ -1110,16 +560,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN010",
-        "SYN025",
-        "SYN032",
-        "SYN028",
-        "SYN013",
-        "SYN027",
-        "SYN023",
-        "SYN036"
-      ],
       "count": 8
     },
     {
@@ -1128,16 +568,6 @@
       "fill_price": "next_open",
       "turnover": 0.125,
       "cost_bps": 10.0,
-      "names": [
-        "SYN010",
-        "SYN025",
-        "SYN028",
-        "SYN023",
-        "SYN032",
-        "SYN036",
-        "SYN034",
-        "SYN013"
-      ],
       "count": 8
     },
     {
@@ -1146,16 +576,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN010",
-        "SYN034",
-        "SYN025",
-        "SYN028",
-        "SYN037",
-        "SYN036",
-        "SYN023",
-        "SYN016"
-      ],
       "count": 8
     },
     {
@@ -1164,16 +584,6 @@
       "fill_price": "next_open",
       "turnover": 0.25,
       "cost_bps": 10.0,
-      "names": [
-        "SYN010",
-        "SYN034",
-        "SYN036",
-        "SYN011",
-        "SYN016",
-        "SYN025",
-        "SYN033",
-        "SYN028"
-      ],
       "count": 8
     },
     {
@@ -1182,19 +592,10 @@
       "fill_price": "next_open",
       "turnover": 0.375,
       "cost_bps": 10.0,
-      "names": [
-        "SYN034",
-        "SYN016",
-        "SYN010",
-        "SYN033",
-        "SYN018",
-        "SYN036",
-        "SYN012",
-        "SYN040"
-      ],
       "count": 8
     }
   ],
+  "holdings_redacted": true,
   "nav_series": {
     "dates": [
       "2020-01-02",

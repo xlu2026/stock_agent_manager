@@ -50,6 +50,40 @@ class UniverseTests(unittest.TestCase):
         self.assertEqual(resolve_universe("hs300_40"), "hs300_40")
 
 
+class StrategyInstructionTests(unittest.TestCase):
+    def test_explicit_strategy_maps_to_spec(self) -> None:
+        parsed = parse_instruction(
+            {
+                **BASE,
+                "strategy": "momentum_param",
+                "params": {"lookback": 120, "skip": 10},
+            }
+        )
+        spec = parsed.to_spec()
+        self.assertEqual(spec["strategy"], "momentum_param")
+        self.assertEqual(spec["params"], {"lookback": 120, "skip": 10})
+        self.assertNotIn("factor", spec)
+        self.assertEqual(parsed.strategy_version, "1.0")
+
+    def test_explicit_single_factor_keeps_legacy_spec(self) -> None:
+        parsed = parse_instruction(
+            {**BASE, "strategy": "single_factor", "params": {"factor": "momentum_12_1"}}
+        )
+        self.assertEqual(parsed.to_spec()["factor"], "momentum_12_1")
+        self.assertNotIn("strategy", parsed.to_spec())
+
+    def test_unknown_strategy_rejected(self) -> None:
+        with self.assertRaises(InstructionError) as ctx:
+            parse_instruction({**BASE, "strategy": "magic"})
+        self.assertEqual(ctx.exception.code, "STRATEGY_UNAVAILABLE")
+
+    def test_bad_params_rejected(self) -> None:
+        with self.assertRaises(InstructionError):
+            parse_instruction(
+                {**BASE, "strategy": "momentum_param", "params": {"lookback": 5}}
+            )
+
+
 class FactorMappingTests(unittest.TestCase):
     def test_keyword_mapping(self) -> None:
         cases = {

@@ -19,7 +19,8 @@
       ## 你能用的工具
 
       - `mcp__srq__run_research_instruction`：**研究主入口**，四字段
-        `question / universe / period / factor_logic`。
+        `question / universe / period / factor_logic`。本会话里它只映射到 `single_factor`；
+        `strategy/params` 是多策略的内部/CLI 接口，不在本会话暴露，不要尝试传。
       - `mcp__srq__run_research_factor_analysis`：同样的四字段 + `quantiles`，补充 IC 与分位收益。
       - `mcp__srq__run_research_paper_session`：同样的四字段 + `sessions`，历史回放模拟盘。
       - `mcp__srq__list_experiments` / `get_experiment`：查已登记实验。

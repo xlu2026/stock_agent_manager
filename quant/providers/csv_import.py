@@ -305,7 +305,7 @@ def import_snapshot(
     return {
         "ok": result["ok"],
         "out_dir": os.path.abspath(out_dir),
-        "data_version": "dv-" + manifest["sha256"][:12],
+        "data_version": manifest.get("data_version") or "dv-" + manifest["sha256"][:12],
         "schema_version": manifest["schema_version"],
         "assets": len(manifest["assets"]),
         "rows": manifest["rows"],

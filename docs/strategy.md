@@ -40,11 +40,71 @@
 
 | ID | 名称 | 状态 | 版本 | 一句话 |
 |---|---|---|---|---|
-| **S1** | 单因子截面等权 | ✅ active | v1.0 | 选一个因子，按截面排序取前 top_k，等权持有，定期调仓，纯多头 |
+| **S1** | `single_factor` 单因子截面等权 | ✅ active | v1.0 | 选一个因子，按截面排序取前 top_k，等权持有，定期调仓，纯多头 |
+| **S2** | `momentum_param` 参数化动量 | 🧪 experimental | v1.0 | 动量，lookback/skip 可调 |
+| **S3** | `composite` 多因子合成 | 🧪 experimental | v1.0 | 多个因子做截面 z-score 后按权重相加 |
 
-> 一个文件放几个策略：**当前 1 个**。
-> 经验边界是 3 个或 500 行——超过就拆成 `docs/strategies/S1-xxx.md`，本文件退化成索引。
-> 现在不拆，是因为拆了只会多一层跳转；等真有第二个策略再动。
+> **2026-11-25 起：策略不再只有“单因子”。** `Spec` 支持 `strategy + params`；
+> 旧 `factor` 写法自动映射到 `single_factor`，旧 `canonical()`/实验 ID/`nav_hash` 保持不变。
+> 新的策略实现在 `quant/strategies/`，参数 schema 也在那里。
+> S2/S3 是 P0 的接口验证策略，尚未纳入公开实验结论。
+
+> 一个文件放几个策略：**当前 3 个注册策略（1 个生产 + 2 个实验）**。
+
+### 1.1 策略与参数
+
+| `strategy` | `params` | 说明 |
+|---|---|---|
+| `single_factor` | `{"factor": "momentum_12_1"}` | 旧 `factor` 写法的等价形式 |
+| `momentum_param` | `{"lookback": 252, "skip": 21}` | 参数化动量；`skip < lookback` |
+| `composite` | `{"factors": {"momentum_12_1": 0.5, "low_vol_60d": 0.5}}` | 多因子 z-score 加权；权重和不能为 0 |
+
+`composite` 目前只做截面 z-score 加权，**没有**行业/市值中性化、权重归一化或风险模型；
+这些属于后续构造器，不塞进策略本身。
+
+> 2026-11-26 首轮实测（`dv-036ee34e7f93`，重算前版本；同样内容的当前全文件版本为 `dv-91efdffbf9fe`）：动量+低波 50/50 与动量+价值 50/50
+> 在 2020-2021、2021-2024、2021-2026、2024-2026 四个区间均不低于单因子动量，
+> 回撤收窄 10–13pp；缩短 lookback 的参数化动量反而更差。样本仅 40 只、未做多重检验，
+> 只能作为“值得继续验证”的证据。详见 `output/reports/strategy_grid_comparison.md`。
+
+### 1.2 权重方案（2026-11-26）
+
+`Spec.weighting` 不再只有 `equal`：
+
+| 方案 | 含义 |
+|---|---|
+| `equal` | 等权（旧路径，逐位不变） |
+| `score` | 按入选标的的因子得分差加权 |
+| `inverse_vol` | 按 60 日波动倒数加权，单票上限 25% |
+| `vol_target` | 等权后按 15% 年化目标波动缩放，不加杠杆 |
+
+实测（动量+低波 50/50，2021-2026）：
+
+| 权重 | CAGR | Sharpe | 最大回撤 | 年换手 |
+|---|---|---|---|---|
+| equal | +2.67% | 0.245 | -39.03% | 2.26 |
+| **inverse_vol** | **+5.17%** | **0.415** | **-30.82%** | 2.39 |
+| score | +2.49% | 0.229 | -37.89% | 3.48 |
+| vol_target | +1.78% | 0.196 | -35.97% | 2.77 |
+
+仍是一份样本、一个区间，不能据此实盘；但 inverse_vol 值得做独立样本外验证。
+
+### 1.3 多因子增强
+
+`composite` 的 `params` 支持：
+
+- `normalize`: `zscore` / `rank`
+- `winsorize`: 0–0.2（截面分位裁剪）
+- `neutralize`: `none` / `demean`
+
+行业/市值中性化需要快照里有行业/市值字段，当前 v2 契约没有，所以暂不提供；
+不要用“demean”冒充行业中性。
+
+### 1.4 参数网格与多重检验
+
+`scripts/run_sweep.py` 用 `quant/sweeps.py` 展开网格，每个 spec 仍走 Agent 1 登记实验；
+汇总时给出 Bonferroni 阈值和 Benjamini-Hochberg q 值，避免只挑最好看的那个。
+示例：`output/reports/sweeps/momentum_param_small/`。
 
 ---
 
@@ -155,10 +215,11 @@ IC 口径（`run_factor_analysis`）：调仓日因子值与到下一调仓日�
 | 环节 | 位置 |
 |---|---|
 | 因子实现 | `quant/factors.py` |
-| 参数校验与默认值 | `quant/spec.py` |
+| 策略实现与注册 | `quant/strategies/`（`single_factor` / `momentum_param` / `composite`） |
+| 参数校验与默认值 | `quant/spec.py` + 各策略的 `params_schema` |
 | 自然语言 → 因子 | `quant/instruction.py`（关键词表，模型不能自己选因子） |
 | 回测主循环 | `quant/engine.py::run_backtest` |
-| 因子分析 | `quant/engine.py::run_factor_analysis` |
+| 因子分析 | `quant/engine.py::run_factor_analysis`（按策略打分算 IC，支持新策略） |
 | 回测前静态校验 | `quant/validate.py` |
 | 实验登记 | `quant/experiments.py` |
 
@@ -166,6 +227,7 @@ IC 口径（`run_factor_analysis`）：调仓日因子值与到下一调仓日�
 
 | 版本 | 日期 | 变更 | 原因 |
 |---|---|---|---|
+| v1.1 | 2026-11-25 | 引入策略注册表与 `strategy + params`；新增 `momentum_param`、`composite`；旧 `factor` 写法保持兼容 | P0：策略多重性与参数解耦 |
 | v1.0 | 2026-11-08 | 首次成文：单因子、四因子、等权、月度调仓 | 把已有实现写成可核对的规格 |
 
 ---
@@ -178,8 +240,8 @@ IC 口径（`run_factor_analysis`）：调仓日因子值与到下一调仓日�
 |---|---|---|
 | 调参数 | 只写 spec | 否（除非改默认值） |
 | 加/删因子 | `factors.py` + `spec.py` + `instruction.py` | 次版本 +1 |
+| 新增策略（新范式） | `quant/strategies/` + `spec.py` 的 `KNOWN`/`canonical()` | 主版本 +1，新策略 ID |
 | 改组合构建 | `engine.py` + `spec.py` | 次版本 +1 |
-| 新范式 | 新增 `quant/portfolio/` 层 | 主版本 +1，新策略 ID |
 
 ### 3.2 加因子的 checklist
 
@@ -205,6 +267,17 @@ IC 口径（`run_factor_analysis`）：调仓日因子值与到下一调仓日�
 1. `python -m unittest discover -s tests -t .`
 2. `python scripts\acceptance.py`
 3. 把新实验的 `experiment_id` 写进本文档 2.6 或新策略条目
+
+### 3.5 加策略的 checklist（2026-11-25 起）
+
+- [ ] 在 `quant/strategies/` 新建模块，定义 `StrategyInfo`（id/version/params_schema/warmup/score）
+- [ ] 在 `quant/strategies/__init__.py` 导入，触发注册
+- [ ] `params_schema` 写类型/范围/默认值；需要跨字段校验时用 `check`
+- [ ] `score(panel, i, params)` 只能读 `≤ i` 的数据
+- [ ] 在 `quant/spec.py` 的 `KNOWN` 里已包含 `strategy/params`（无需逐个策略加字段）
+- [ ] `Spec.canonical()` 会为新策略带上 `strategy/strategy_version/params`；旧 `factor` 路径不能变
+- [ ] 补测试：参数越界拒绝、同输入同输出、预热不足被 validate 拦截
+- [ ] 更新本文档策略索引与代码锚点
 
 ---
 

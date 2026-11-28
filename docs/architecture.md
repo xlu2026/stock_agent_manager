@@ -77,8 +77,9 @@
                                   人手动发布
 ```
 
-- **Agent 1（量化）**：只做编排。四字段指令由 `quant/instruction.py` 映射成 spec，
-  引擎在 `quant/engine.py` 算净值和指标，实验登记到 `experiments/`。
+- **Agent 1（量化）**：只做编排。四字段指令由 `quant/instruction.py` 映射成 spec（当前映射到
+  `single_factor`）；引擎在 `quant/engine.py` 算净值和指标，策略打分由 `quant/strategies/`
+  注册表提供，实验登记到 `experiments/`。
 - **Agent 2（数据运维）**：只刷新和体检数据。刷新是后台作业，`refresh_snapshot` 立刻返回
   `job_id`，由 `refresh_status` 轮询；成功后更新 `output/data/latest.json` 指针。
 - **Agent 3（写作）**：把简报写成文章，最高到公众号草稿或本地 Markdown；没有发布能力。
@@ -115,6 +116,9 @@ stock_agent_manager/
 │  ├─ data_jobs.py              # 刷新作业目录/状态
 │  ├─ data_mcp.py               # Agent 2 的 data-ops MCP 服务端（6 个工具）
 │  ├─ factors.py / engine.py    # 4 因子 + 确定性回测
+│  ├─ portfolio.py              # 组合构造：equal/score/inverse_vol/vol_target
+│  ├─ sweeps.py                 # 参数网格 + 多重检验
+│  ├─ strategies/               # 策略注册表：single_factor / momentum_param / composite
 │  ├─ experiments.py            # 实验登记簿（公开记录脱敏）
 │  ├─ paper.py                  # 模拟盘
 │  ├─ mcp_server.py             # srq-compat：full 14 / research 10
@@ -122,13 +126,17 @@ stock_agent_manager/
 │  ├─ data/                     # 合成样本（prices.csv + manifest.json）
 │  ├─ providers/                # CSV 导入 / QMT 只读 / 体检 / 契约
 │  │  ├─ csv_import.py
+│  │  ├─ akshare.py              # AkShare 价格/财报导出
+│  │  ├─ sources.py              # 数据源注册表
 │  │  ├─ qmt.py
 │  │  ├─ contract.py
 │  │  └─ snapshot_check.py
-│  └─ broker/                   # PaperBroker + 提案/批准 + SmartX CSV 工具
-│     ├─ paper.py / proposals.py / approve.py / ledger.py
-│     ├─ smartx_csv.py          # 提案 -> SmartX CSV（不提交）
-│     └─ smartx_export.py       # 读 6 个导出 CSV 并对账
+│  ├─ broker/                   # PaperBroker + 提案/批准 + SmartX CSV 工具
+│  │  ├─ paper.py / proposals.py / approve.py / ledger.py
+│  │  ├─ smartx_csv.py          # 提案 -> SmartX CSV（不提交）
+│  │  └─ smartx_export.py       # 读 6 个导出 CSV 并对账
+│  └─ deploy/                   # QMT 策略生成/投递（不启动/不下单）
+│     └─ qmt.py
 ├─ writing/                     # 写作域（禁止 import quant）
 │  ├─ article.py                # front matter 渲染
 │  ├─ compliance.py             # 合规闸门

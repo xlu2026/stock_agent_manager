@@ -1,18 +1,25 @@
 # 杂灵根散修录 · 量化研究 Agent（Phase 1 + 数据/执行链路）
 
-一个散户把“价值判断”写成可回测因子的公开实验。当前跑通三件事：
+一个散户把“价值判断”写成可回测因子的公开实验。当前跑通四条链路：
 
-- **Agent 2**：把真实行情刷新成可复现快照（baostock → CSV → v2）；
-- **Agent 1**：四字段研究指令 → 确定性回测 → 指标与实验 ID；
-- **Agent 3**：技术文章写作 → 公众号草稿 / 知乎导出 → 人工发布。
+- **Agent 2**：真实行情 → 可复现快照（baostock / AkShare 交叉验证 → v2）；
+- **Agent 1**：四字段研究指令 / 内部 spec → 确定性回测 → 指标与实验 ID；
+- **Agent 3**：技术文章写作 → 公众号草稿 / 知乎导出 → 人工发布；
+- **QMT / SmartX**：QMT 内置策略人工导入模拟盘；SmartX 仍是 CSV 半自动。
 
-执行侧停在 SmartX CSV 半自动：能生成订单 CSV、能自动导出对账，但下单确认必须人工点。
+执行侧没有程序化下单：QMT 策略需人工粘贴/启动，SmartX 上传/确认也必须人工点。
 不是选股服务，不展示实时信号，不承诺收益，不推荐个股。这里是认知记录，不是工具橱窗。
 
 | 想先看什么 | 去哪 |
 |---|---|
 | 怎么跑起来 | 本文「快速开始」 |
 | 架构、假设、合规可达性分析 | [docs/architecture.md](docs/architecture.md) |
+| 当前状态、待办、踩过的坑 | [docs/handoff.md](docs/handoff.md) |
+| 基准/Sharpe/超额/成本口径 | [docs/metrics-and-benchmarks.md](docs/metrics-and-benchmarks.md) |
+| 研究流程（预注册/训练测试/walk-forward） | [docs/research-playbook.md](docs/research-playbook.md) |
+| 样本外与 walk-forward 结果 | [docs/strategy-validation.md](docs/strategy-validation.md) |
+| QMT 部署与 paper | [docs/qmt-deployment.md](docs/qmt-deployment.md)、[docs/paper-tracking.md](docs/paper-tracking.md) |
+| 最近三优化点复盘 | [docs/review-2026-11-28.md](docs/review-2026-11-28.md) |
 | 验收结论与已知限制（Phase 1 历史报告） | [docs/phase1-report.md](docs/phase1-report.md) |
 | 策略规格与版本规则 | [docs/strategy.md](docs/strategy.md) |
 | 公众号账号状态（接口权限、白名单、变现开通） | [docs/wechat-account.md](docs/wechat-account.md) |
@@ -43,6 +50,20 @@ dsh --profile agent2 "用最新的快照增量刷新到今天"
 #    刷新完成后，Agent 1 用 --latest 接最新快照
 python scripts\run_agent1.py --instruction examples\research_instruction_hs300.json --latest
 
+# 2c) QMT 策略生成（只写文件，不启动、不下单）
+python scripts\deploy_qmt.py --spec output\qmt\spec_mom_lowvol_invvol.json `
+    --snapshot C:\AI_workspace\smartx_client\out\real40_pit_cont_pit_20261128 `
+    --name nfr_mom_lowvol --force
+
+# 2d) QMT paper 版（动态月度、追加 NAV；仍需人工导入/启动）
+python scripts\deploy_qmt.py --spec output\qmt\spec_mom_lowvol_invvol.json `
+    --snapshot C:\AI_workspace\smartx_client\out\real40_pit_cont_pit_20261128 `
+    --name nfr_mom_lowvol_paper --paper --force
+
+# 2e) QMT NAV 对账
+python scripts\compare_qmt_nav.py --qmt output\qmt\nfr_mom_lowvol_nav.csv `
+    --experiment exp-002c539a8e70
+
 # 3) 直接跑引擎（输入是内部 spec，不是四字段契约，用于复现/调试）
 python -m quant.cli backtest --spec-file examples\research_momentum.json
 
@@ -68,7 +89,7 @@ python -m writing.export --all
 # 7) 一键验收（14 项）
 python scripts\acceptance.py
 
-# 8) 回归测试（215 项）
+# 8) 回归测试（293 项）
 python -m unittest discover -s tests -t .
 
 # 9) 发布台：状态 / 卡片 / 回填（不发布）
@@ -132,7 +153,15 @@ powershell -ExecutionPolicy Bypass -File scripts\refresh_and_run.ps1 `
 也可以直接用导出脚本：`--incremental --base-dir <旧快照>`，
 默认拿最近 10 个交易日做重叠比对（`--overlap-days` 可调）。
 
-QMT 只读导出（个人 QMT 已停用，以下仅历史备查）：
+QMT 内置策略（当前主路径，**人工导入/启动**）：
+
+- 回测版：`output/qmt/nfr_mom_lowvol.py`，冻结 sha `089dfd...`，跟踪误差约 4–6%；
+- paper 版：`output/qmt/nfr_mom_lowvol_paper.py`，动态月度、追加 NAV；
+- 生成/投递用 `scripts/deploy_qmt.py`；必须手工粘贴到 QMT“新建 Python 策略”；
+- 不做自动注册/启动/登录，Agent 4 未建；
+- 详见 `docs/qmt-deployment.md`、`docs/paper-tracking.md`。
+
+外部 QMT 数据导出（只读，历史备查；需要能 `import xtquant` 的环境）：
 
 ```powershell
 # 先探本地能读到什么（不写文件）
@@ -142,8 +171,8 @@ python scripts\export_qmt_snapshot.py --stocks 600000.SH,000001.SZ --start 20190
     --out snapshots\qmt --universe csi300 --universe-file raw\universe.csv
 ```
 
-注意：sidecar 要跑在能 `import xtquant` 的那个 Python 里（QMT 安装目录下，或 pip 装的
-`xtquant`）。若券商只允许在客户端进程内运行，就用终端手工导出 CSV，再走上面的 `csv_import`。
+注意：miniQMT 对个人被拒、仓库环境无 `xtquant`；当前 QMT 侧的可行路径是
+“生成 `.py` → 人工粘贴到客户端 → 模拟账户启动”，不是外部 API 下单。
 
 券商抽象层演示（只记账，不碰真钱）：
 
@@ -301,9 +330,11 @@ python scripts\commit_articles.py -m "量化研究 004：补数据源一节"
 | `config/` | `agent2.example.json`（数据刷新配置）、`publishing.json`（发布默认值）；均不含凭据 |
 | `tools/` | 数据生成、封面生成、Cordis 生成与安装、asar 读取器 |
 | `examples/` | 四字段研究指令、内部 spec、写作简报示例 |
+| `templates/` | 预注册、paper 日报、异常记录模板 |
+| `docs/` | 交接、口径、验证、QMT/paper、数据/执行 runbook |
 | `experiments/` | 公开实验记录；个股代码在 `experiments/.private/`（gitignore） |
 | `output/` | `reports/`、`articles/`（文章与知乎导出）、`data/latest.json` 指针、`evidence/`、`broker/` |
-| `tests/` | 215 项回归测试 |
+| `tests/` | 293 项回归测试 |
 | `bin/srq.cmd` | `srq mcp serve` 兼容入口（纯 ASCII 批处理） |
 
 ---
@@ -349,14 +380,14 @@ dsh --profile agent2 "用最新的快照增量刷新到今天"
    接真机时字段需要逐项核对。
 2. **`deepseek-harness-sdk` 不存在** → 控制平面改用 `dsh` CLI + `agents/mcp_client.py`；
    仓库主链路零第三方依赖。
-3. **数据不再只有合成样本**：合成锚 `dv-572bafec2a92` 仍用于回归；真实 baostock 快照
-   `dv-946b080b1258` 已跑通（40 只 × 1905 天、时点成分）。QMT 对个人已停用，数据侧改走
-   baostock/CSV，与券商解耦。
+3. **数据不再只有合成样本**：合成锚 `dv-572bafec2a92` 仍用于回归；最新正式快照
+   `dv-c3c3aa85070f`（40 只 × 2019-01-02..2026-11-27、时点成分、连续价、全文件 hash）。
+   第二源 AkShare 已接入并做价格交叉验证；财报 PIT 仍不可互验。
 4. **`dsh headless` 不消费 agent preset**（源码硬限制）→ 用 profile 级隔离；
    preset 形态保留给 Web 会话，未在 Web 上端到端实测。
 5. **`factor_logic` 由代码映射，不由模型选择** → 否则模型就决定了回测跑什么。
-6. **执行侧不是 QMT 自动化**：miniQMT 对个人停用，SmartX Python 组件是沙箱；可用的是
-   SmartX CSV 半自动（生成 CSV → 人工上传/确认 → 自动导出对账），**没有程序化下单适配器**。
+6. **执行侧不是程序化 QMT**：miniQMT 对个人被拒、无 `xtquant`；QMT 只能生成 `.py`
+   后人工粘贴到客户端、模拟账户启动（无自动注册/登录/下单）。SmartX 仍是 CSV 半自动。
 
 ---
 
@@ -379,11 +410,20 @@ dsh --profile agent2 "用最新的快照增量刷新到今天"
 
 ## 尚未实现 / 下一阶段
 
-- **执行**：SmartX CSV 半自动已落地（生成 CSV、人工上传/确认、自动导出对账）；
-  缺 `SmartX CSV → Broker` 适配器、免确认流程和程序化下单。实盘路线仍受 `AGENTS.md` B 节约束。
-- **数据**：真实 baostock 快照已跑通；缺双源交叉校验、财报重述检测，以及 `manifest.sha256`
-  从“主要覆盖 prices.csv”升级为全文件哈希。
+- **执行**：QMT 内置策略已能生成并人工导入（回测冻结 sha `089dfd...`、paper 版 sha `9766768f...`）；
+  缺自动注册/启动、订单级对账和 paper 实跑。SmartX CSV 半自动仍在；实盘路线受 `AGENTS.md` B 节约束。
+- **数据**：双源、连续价、全文件 `dv`、QMT bars 导入已完成；缺历史 PIT 财报、财报重述检测、
+  2 只 AkShare 失败标的（000961/600068）。
+- **验证**：P0 + walk-forward 已完成；固定候选 10–50bp 成本通过，但 BH 不显著、未计容量/冲击。
 - **发布**：发布台（`scripts/publish.py`）已落地；未做自动发布、浏览器自动化；Agent 4 未建。
 - **Router / 常驻调度 / 自主派活**：未做；`agents/envelope.py` 只定义统一信封。
-- **组合构建层**（多因子、权重、敞口上限）：未开始。
-- **PaperBroker** 仍是唯一 Broker 实现；`run_paper_session` 可继续用于部署前验证。
+- **组合构建层**：equal/score/inverse_vol/vol_target 已落地；缺行业/市值中性、容量约束。
+- **Broker**：`PaperBroker` 是唯一程序化 Broker；QMT 走人工导入，不是 Broker 适配器。
+
+---
+
+## 关注
+
+<img src="docs/assets/wechat-qr.jpg" alt="公众号二维码" width="220">
+
+个人研究记录，不荐股、不提供买卖信号。

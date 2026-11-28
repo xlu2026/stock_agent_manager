@@ -144,7 +144,9 @@ def run(
         summary={
             "stage": "completed",
             "contract": contract,
-            "factor": result["spec"]["factor"],
+            "strategy": result["spec"].get("strategy", "single_factor"),
+            "params": result["spec"].get("params", {}),
+            "factor": result["spec"].get("factor"),
             "window": f"{result['spec']['start']}..{result['spec']['end']}",
             "rebalance": result["spec"]["rebalance"],
             "top_k": result["spec"]["top_k"],

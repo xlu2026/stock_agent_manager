@@ -196,6 +196,107 @@ def _fetch_prices(bs, codes: list[str], start: str, end: str, adjustflag: str) -
     return rows
 
 
+CONTINUOUS_FIELDS = "date,open,high,low,close,preclose,volume"
+
+
+def _continuous_rows(asset: str, raw_rows: list[list]) -> list[list]:
+    """raw rows: [date, open, high, low, close, preclose, volume] -> 连续价格行。"""
+    out: list[list] = []
+    adj = None
+    prev_close = None
+    for d in raw_rows:
+        o, h, l, c = (_num(d[i]) for i in (1, 2, 3, 4))
+        pre = _num(d[5])
+        if o is None or h is None or l is None or c is None or min(o, h, l, c) <= 0:
+            continue
+        if adj is None:
+            adj = c
+        else:
+            base = pre if pre and pre > 0 else prev_close
+            if base and base > 0:
+                adj *= c / base
+        factor = adj / c
+        volume = _num(d[6])
+        out.append(
+            [
+                d[0],
+                asset,
+                f"{o * factor:.10f}",
+                f"{h * factor:.10f}",
+                f"{l * factor:.10f}",
+                f"{adj:.10f}",
+                str(0 if volume is None else int(volume)),
+                "1.0",
+            ]
+        )
+        prev_close = c
+    return out
+
+
+def _fetch_raw_prices(bs, codes: list[str], start: str, end: str) -> dict[str, list[list]]:
+    """拉不复权 OHLC + preclose，按 asset 分组，供连续价增量使用。"""
+    out: dict[str, list[list]] = {}
+    for i, code in enumerate(codes, 1):
+        rs = bs.query_history_k_data_plus(
+            code, CONTINUOUS_FIELDS, start_date=start, end_date=end, frequency="d", adjustflag="3"
+        )
+        if rs.error_code != "0":
+            raise SystemExit(f"{code} 行情失败：{rs.error_code} {rs.error_msg}")
+        asset = _asset(code)
+        out[asset] = [rs.get_row_data() for _ in iter(lambda: rs.next(), False)]
+        print(f"  [{i}/{len(codes)}] {asset}: {len(out[asset])} 行（原始）", flush=True)
+    return out
+
+
+def _extend_continuous(
+    old_prices: list[list], raw_by_asset: dict[str, list[list]], last_date: str
+) -> list[list]:
+    """从 base 最后收盘价出发，用新窗口的 close/preclose 继续链式复利。"""
+    old_by: dict[str, list[list]] = {}
+    for row in old_prices:
+        old_by.setdefault(row[1], []).append(row)
+    out: list[list] = []
+    for asset, raw_rows in raw_by_asset.items():
+        base_rows = old_by.get(asset)
+        if not base_rows:
+            continue
+        base_close = _num(base_rows[-1][5])
+        if base_close is None or base_close <= 0:
+            continue
+        adj = base_close
+        prev_close = None
+        for d in raw_rows:
+            c = _num(d[4])
+            if c is None or c <= 0:
+                continue
+            if d[0] <= last_date:
+                prev_close = c
+                continue
+            o, h, l = (_num(d[i]) for i in (1, 2, 3))
+            if o is None or h is None or l is None or min(o, h, l) <= 0:
+                continue
+            pre = _num(d[5])
+            base_px = pre if pre and pre > 0 else prev_close
+            if base_px and base_px > 0:
+                adj *= c / base_px
+            factor = adj / c
+            volume = _num(d[6])
+            out.append(
+                [
+                    d[0],
+                    asset,
+                    f"{o * factor:.10f}",
+                    f"{h * factor:.10f}",
+                    f"{l * factor:.10f}",
+                    f"{adj:.10f}",
+                    str(0 if volume is None else int(volume)),
+                    "1.0",
+                ]
+            )
+            prev_close = c
+    return out
+
+
 def _fetch_calendar(bs, start: str, end: str) -> list[list]:
     rs = bs.query_trade_dates(start_date=start, end_date=end)
     rows: list[list] = []
@@ -414,16 +515,39 @@ def _fallback_full(args, reason: str) -> int:
     return subprocess.call([sys.executable, os.path.abspath(__file__)] + cleaned)
 
 
+def _fetch_prices_continuous(bs, codes: list[str], start: str, end: str) -> list[list]:
+    """全量：不复权 OHLC + preclose -> 连续总收益价。"""
+    rows: list[list] = []
+    for asset, raw in _fetch_raw_prices(bs, codes, start, end).items():
+        rows.extend(_continuous_rows(asset, raw))
+    return rows
+
+
 def _run_incremental(bs, args) -> int:
     base = os.path.abspath(args.base_dir)
     out = os.path.abspath(args.out)
     if base == out:
         print("--incremental 的输出目录不能和 --base-dir 相同（会破坏旧实验的可复现性）", file=sys.stderr)
         return 2
+    continuous = getattr(args, "continuous", False)
+    if continuous:
+        try:
+            with open(os.path.join(base, "manifest.json"), encoding="utf-8") as fh:
+                base_notes = (json.load(fh).get("notes") or {})
+        except (OSError, ValueError):
+            base_notes = {}
+        if base_notes.get("price_construction") != "total_return_chain_preclose":
+            return _fallback_full(args, "base 不是连续价快照，无法安全增量；改为全量重建")
 
     _, old_prices = _read_rows(os.path.join(base, "prices.csv"))
     if not old_prices:
         return _fallback_full(args, f"{base} 里没有 prices.csv")
+    try:
+        with open(os.path.join(base, "manifest.json"), encoding="utf-8") as fh:
+            base_manifest = json.load(fh)
+        base_universe_name = str(base_manifest.get("universe") or args.universe)
+    except (OSError, ValueError):
+        base_universe_name = args.universe
     _, old_cal = _read_rows(os.path.join(base, "calendar.csv"))
     old_dates = [r[0] for r in old_cal] or sorted({r[0] for r in old_prices})
     last_date = max(old_dates)
@@ -436,18 +560,25 @@ def _run_incremental(bs, args) -> int:
         print("区间内没有新交易日")
         return 0
 
-    overlap = set(old_dates[-max(1, args.overlap_days) :])
     assets = {r[1] for r in old_prices}
     codes = [_asset_to_code(a) for a in sorted(assets)]
-    fetch_start = min(overlap) if overlap else last_date
-    new_prices = _fetch_prices(bs, codes, fetch_start, args.end, ADJUST_FLAG[args.adjust])
-
-    bad = _overlap_changed(old_prices, new_prices, overlap)
-    if bad:
-        a, d, old_v, new_v = bad[0]
-        return _fallback_full(args, f"重叠窗口发现除权/修订（{a} {d}: {old_v} -> {new_v}）")
-
-    merged_prices = _merge_prices(old_prices, new_prices, last_date)
+    if continuous:
+        new_prices = _extend_continuous(
+            old_prices, _fetch_raw_prices(bs, codes, last_date, args.end), last_date
+        )
+        if not new_prices:
+            print("没有新增行情（可能今天尚未收盘或区间内无新交易日）")
+            return 0
+        merged_prices = sorted(old_prices + new_prices, key=lambda r: (r[0], r[1]))
+    else:
+        overlap = set(old_dates[-max(1, args.overlap_days) :])
+        fetch_start = min(overlap) if overlap else last_date
+        new_prices = _fetch_prices(bs, codes, fetch_start, args.end, ADJUST_FLAG[args.adjust])
+        bad = _overlap_changed(old_prices, new_prices, overlap)
+        if bad:
+            a, d, old_v, new_v = bad[0]
+            return _fallback_full(args, f"重叠窗口发现除权/修订（{a} {d}: {old_v} -> {new_v}）")
+        merged_prices = _merge_prices(old_prices, new_prices, last_date)
     if len(merged_prices) == len(old_prices):
         print("没有新增行情（可能今天尚未收盘或区间内无新交易日）")
         return 0
@@ -494,7 +625,8 @@ def _run_incremental(bs, args) -> int:
 
     notes = {
         "provider": "baostock",
-        "adjustflag": ADJUST_FLAG[args.adjust],
+        "adjustflag": "3+preclose(continuous)" if getattr(args, "continuous", False) else ADJUST_FLAG[args.adjust],
+        "price_construction": "total_return_chain_preclose" if getattr(args, "continuous", False) else "baostock_adjusted_close",
         "index": args.index if not args.stocks else None,
         "sample": args.sample,
         "universe_point_in_time": bool(old_uni),
@@ -516,7 +648,7 @@ def _run_incremental(bs, args) -> int:
         result = import_snapshot(
             out,
             prices_path=os.path.join(raw, "prices.csv"),
-            universe=args.universe,
+            universe=base_universe_name,
             source=args.source,
             adjust_mode=args.adjust,
             fundamentals_path=os.path.join(raw, "fundamentals.csv") if fundamentals else None,
@@ -560,6 +692,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--start", default="2019-01-01")
     p.add_argument("--end", default="2024-12-31")
     p.add_argument("--adjust", default="backward", choices=sorted(ADJUST_FLAG))
+    p.add_argument(
+        "--continuous",
+        action="store_true",
+        help="用不复权 OHLC + preclose 链式生成连续总收益价（修复除权日跳空；暂不支持增量）",
+    )
     p.add_argument("--fundamentals", action="store_true", help="同时拉财报（慢，但价值/质量因子需要）")
     p.add_argument("--timeout", type=float, default=20.0, help="单次网络查询超时秒数（默认 20）")
     p.add_argument("--min-coverage", type=float, default=0.9, help="标的在交易日历上的最低覆盖率（默认 0.9）")
@@ -633,7 +770,11 @@ def main(argv: list[str] | None = None) -> int:
             codes = _sample(_index_codes(bs, INDEX_APIS[args.index]), args.sample)
             print(f"当前成分取样 {len(codes)} 只（非时点）", flush=True)
 
-        prices = _fetch_prices(bs, codes, args.start, args.end, ADJUST_FLAG[args.adjust])
+        prices = (
+            _fetch_prices_continuous(bs, codes, args.start, args.end)
+            if getattr(args, "continuous", False)
+            else _fetch_prices(bs, codes, args.start, args.end, ADJUST_FLAG[args.adjust])
+        )
         if not prices:
             print("没有取到任何行情，终止", file=sys.stderr)
             return 2
@@ -690,7 +831,8 @@ def main(argv: list[str] | None = None) -> int:
 
     notes = {
         "provider": "baostock",
-        "adjustflag": ADJUST_FLAG[args.adjust],
+        "adjustflag": "3+preclose(continuous)" if getattr(args, "continuous", False) else ADJUST_FLAG[args.adjust],
+        "price_construction": "total_return_chain_preclose" if getattr(args, "continuous", False) else "baostock_adjusted_close",
         "index": args.index if not args.stocks else None,
         "sample": args.sample,
         "universe_point_in_time": members is not None,

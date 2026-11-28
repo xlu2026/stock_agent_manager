@@ -62,6 +62,19 @@ def _sha256_file(path: str) -> str:
     return h.hexdigest()
 
 
+def snapshot_digest(files: dict[str, dict], schema_version: int, universe: str, adjust_mode: str) -> str:
+    """全文件指纹：prices/calendar/fundamentals/universe 任一变化都会换 data_version。"""
+    payload = {
+        "schema_version": schema_version,
+        "universe": universe,
+        "adjust_mode": adjust_mode,
+        "files": {name: info.get("sha256") for name, info in sorted(files.items())},
+    }
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
 def _write_csv(path: str, fields: list[str], rows: list[dict]) -> int:
     with open(path, "w", encoding="utf-8", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=fields, lineterminator="\n")
@@ -98,6 +111,7 @@ def write_snapshot(out_dir: str, snap: Snapshot) -> dict:
         path = os.path.join(out_dir, name)
         files[name] = {"sha256": _sha256_file(path), "rows": rows}
 
+    digest = snapshot_digest(files, SCHEMA_VERSION, snap.universe, snap.adjust_mode)
     manifest = {
         "schema_version": SCHEMA_VERSION,
         "universe": snap.universe,
@@ -112,7 +126,10 @@ def write_snapshot(out_dir: str, snap: Snapshot) -> dict:
         # 这些不进回测，但决定了你敢不敢信这份数据。
         "notes": snap.notes,
         "files": files,
-        # sha256 指 prices.csv，与 v1 的 data_version 语义保持兼容
+        # 全文件指纹：fundamentals/universe/calendar 改动也会换 data_version
+        "snapshot_sha256": digest,
+        "data_version": "dv-" + digest[:12],
+        # 兼容旧字段：sha256 仍指 prices.csv；旧快照/旧实验继续按它取版本
         "sha256": files["prices.csv"]["sha256"],
     }
     with open(os.path.join(out_dir, "manifest.json"), "w", encoding="utf-8", newline="\n") as fh:

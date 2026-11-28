@@ -28,9 +28,12 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import math
 import os
 from dataclasses import dataclass, field
 from functools import lru_cache
+
+from .providers.contract import snapshot_digest
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 DATA_DIR_ENV = "NFR_DATA_DIR"
@@ -99,6 +102,17 @@ class Panel:
 
     def has_point_in_time_universe(self) -> bool:
         return self.universe_by_date is not None
+
+    def has_fundamentals(self) -> bool:
+        """至少有一个标的、一个交易日有可用的 book/earnings。"""
+        for asset in self.assets:
+            for value in self.book.get(asset, ()):
+                if math.isfinite(value):
+                    return True
+            for value in self.earnings.get(asset, ()):
+                if math.isfinite(value):
+                    return True
+        return False
 
 
 def data_dir_path(override: str | None = None) -> str:
@@ -340,6 +354,30 @@ def _load_panel_at(dir_path: str) -> Panel:
             f"expected={str(expected)[:12]} actual={actual[:12]}"
         )
 
+    snapshot_sha = str(manifest.get("snapshot_sha256") or "")
+    if snapshot_sha:
+        files = manifest.get("files") or {}
+        for name, info in files.items():
+            path = os.path.join(dir_path, name)
+            if not os.path.exists(path):
+                raise DataError(f"manifest 列出的文件不存在：{path}")
+            if _sha256_file(path) != info.get("sha256"):
+                raise DataError(f"数据指纹不一致：{name} 与 manifest.json 不匹配")
+        computed = snapshot_digest(
+            files,
+            int(manifest.get("schema_version") or 1),
+            str(manifest.get("universe") or ""),
+            str(manifest.get("adjust_mode") or "none"),
+        )
+        if computed != snapshot_sha:
+            raise DataError("manifest.snapshot_sha256 与文件哈希组合不一致")
+        data_version = str(manifest.get("data_version") or ("dv-" + snapshot_sha[:12]))
+        data_sha256 = snapshot_sha
+    else:
+        # 旧快照没有全文件指纹：保持原来的 prices-only 语义，旧实验不漂移
+        data_version = "dv-" + actual[:12]
+        data_sha256 = actual
+
     fields, rows = _read_csv(prices_path)
     price_dates = sorted({r["date"] for r in rows if r.get("date")})
     if not price_dates:
@@ -382,8 +420,8 @@ def _load_panel_at(dir_path: str) -> Panel:
         book=series["book"],
         earnings=series["earnings"],
         universe=str(manifest.get("universe") or "unknown"),
-        data_version="dv-" + actual[:12],
-        data_sha256=actual,
+        data_version=data_version,
+        data_sha256=data_sha256,
         source=_infer_source(manifest),
         provider=str(manifest.get("provider") or ""),
         adjust_mode=str(manifest.get("adjust_mode") or "none"),

@@ -2,7 +2,14 @@
 
 ## 开工先读
 
-动手之前先读 `docs/handoff.md`（当前状态、待办、已踩过的坑）和 `docs/architecture.md`。
+动手之前先读：
+
+- `docs/handoff.md`（当前状态、待办、已踩过的坑）
+- `docs/architecture.md`
+- `docs/metrics-and-benchmarks.md`（基准/Sharpe/成本口径）
+- `docs/research-playbook.md`（预注册、训练/测试、walk-forward）
+- `docs/review-2026-11-28.md`（最近三个优化点的缺口）
+
 不要凭对话印象猜项目进度——对话会丢，文档不会。
 
 这是一个**个人认知记录**项目，不是选股服务。下面几条是一票否决的边界，优先级高于任何技术目标。
@@ -12,6 +19,7 @@
 **A. 对外表达（所有 agent，写作 Agent 尤其严格）**
 
 - 不荐股、不展示个股代码、不给买入/卖出信号、不承诺收益。
+  **复盘类文章可以给市场／资产类别的大方向判断**，但不得落到具体标的与买卖点，且必须写清依据与反证条件。
 - 不调用 `freepublish`，不用浏览器自动化绕过发布限制；发布永远由人手动点。
 
 公众号文章、公开输出、对外回复都属于"对外表达"，上面两条一个字都不放松。
@@ -54,7 +62,7 @@
 - `python -m agents.agent3` 是确定性渲染器，**不是写作 agent**：只用于重渲染已有简报、
   格式修订与合规检查。
 - 主会话可以给素材、改稿、复核、推草稿箱，但不代替 Agent 3 成文。
-- 文风规则（不用「不是……而是」、不给自己加戏）在 `cordis/prompts/agent3.md`；
+- 文风与写作规范（研究记录体、术语、比喻上限、连续性）在 `cordis/prompts/agent3.md`；专辑上下文卡在 `C:\AI_workspace\wechat_writing\ALBUM.md`；每篇配套 `reports/<slug>.meta.md`（不进公众号）。
   改完提示词要跑 `tools/build_cordis.py` + `tools/install_dsh_profile.py`。
 - **全部成文稿都在 `C:\AI_workspace\wechat_writing\articles\`**：`writing/article.py::ARTICLE_DIR`
   默认指向那里，可用 `WFR_ARTICLES_DIR` 覆盖。仓库 `output/articles/` 只放封面素材与导出物，
@@ -88,7 +96,31 @@
   `config/agent2.example.json`），环境变量优先。
 - 铁律：**不覆盖已有快照**（每次新目录、全 ASCII 路径）；刷新成功后 Agent 2 会更新
   `output/data/latest.json` 指针，Agent 1 用 `--latest` 接上（也可以继续显式传 `--data-dir`）。
+- 增量刷新必须继承 base 的 `universe` 名；2026-11-28 修过一次增量丢 `hs300_40_pit` 的问题。
+- 刷新后先跑 `scripts/check_snapshot.py <dir>`；改过 manifest/文件内容再跑
+  `scripts/rehash_snapshot.py <dir>`。`dv` 是全文件 hash，不再只 hash prices。
 - 没有 Agent 2 会话时，人工入口是 `scripts\refresh_and_run.ps1` 或导出脚本，规则相同。
+
+## 研究口径（2026-11-28 起）
+
+- **主基准只有一个**：40 只 PIT 等权、每日再平衡、零成本；QMT 的 000300 只做展示，
+  不进入研究结论的“超额/alpha”。
+- 登记实验必须走 Agent 1；训练集选参、测试集只跑一次；固定候选不参与每折选参。
+- 新策略/新参数/新数据源先填 `templates/pre_registration.md`，结果记入
+  `docs/experiment-ledger.md`；不接受“看完测试再改规则”。
+- 成本必须注明档位（默认 10bp）；10bp 的正超额不能直接推到 30/50bp。
+- 诊断/对照可以直接调引擎，但**不能绕过 Agent 1 的校验去下“策略有效”的结论**。
+
+## QMT / paper（2026-11-28 状态）
+
+- QMT 部署是**确定性生成 + 人工导入**：`quant/deploy/qmt.py`、`scripts/deploy_qmt.py`；
+  不自动注册、不自动启动、不自动登录，Agent 4 未建。
+- 历史回测版冻结在 `output/qmt/nfr_mom_lowvol.py`（sha `089dfd...`），是执行近似：
+  QMT 同 bar 卖出回款不可用，存在现金拖累/整手差，跟踪误差约 4–6%。
+- 前向 paper 版在 `output/qmt/nfr_mom_lowvol_paper.py`（sha `9766768f...`）：
+  动态月度、追加 NAV、state 防重复调仓；必须在 QMT 模拟账户人工启动。
+- 不做实盘、不自动下单、不做两阶段调仓（除非同步改引擎）；详见
+  `docs/qmt-alignment-decision.md`、`docs/paper-tracking.md`、`docs/execution-runbook.md`。
 
 ## 修改后必须跑
 

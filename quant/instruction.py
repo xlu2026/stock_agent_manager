@@ -69,14 +69,29 @@ class Instruction:
     factor: str
     mapping: dict = field(default_factory=dict)
     overrides: dict = field(default_factory=dict)
+    strategy: str = "single_factor"
+    params: dict = field(default_factory=dict)
+    strategy_version: str = ""
 
     def to_spec(self) -> dict:
-        spec = {
-            "factor": self.factor,
-            "universe": self.universe,
-            "start": self.start,
-            "end": self.end,
-        }
+        legacy = self.strategy == "single_factor" and (
+            not self.params or self.params == {"factor": self.factor}
+        )
+        if legacy:
+            spec = {
+                "factor": self.factor,
+                "universe": self.universe,
+                "start": self.start,
+                "end": self.end,
+            }
+        else:
+            spec = {
+                "strategy": self.strategy,
+                "params": self.params,
+                "universe": self.universe,
+                "start": self.start,
+                "end": self.end,
+            }
         spec.update(self.overrides)
         return spec
 
@@ -162,13 +177,39 @@ def parse_instruction(raw: dict | str) -> Instruction:
 
     universe = resolve_universe(raw["universe"])
     start, end = parse_period(raw["period"])
-    factor, mapping = resolve_factor(raw["factor_logic"])
+
+    from .strategies import StrategyError, get as get_strategy, validate_params
+
+    if "strategy" in raw:
+        strategy = raw["strategy"]
+        if not isinstance(strategy, str) or not strategy.strip():
+            raise InstructionError("strategy 必须是非空字符串", code="BAD_STRATEGY")
+        strategy = strategy.strip()
+        try:
+            info = get_strategy(strategy)
+            params = validate_params(strategy, raw.get("params", {}))
+        except StrategyError as exc:
+            raise InstructionError(str(exc), code="STRATEGY_UNAVAILABLE") from exc
+        factor = str(params.get("factor") or "")
+        if strategy == "single_factor" and not factor:
+            factor, mapping = resolve_factor(raw["factor_logic"])
+            params["factor"] = factor
+        else:
+            mapping = {"strategy": strategy, "params": params, "source": "explicit_strategy"}
+    else:
+        factor, mapping = resolve_factor(raw["factor_logic"])
+        strategy = "single_factor"
+        params = {"factor": factor}
+        info = get_strategy(strategy)
 
     overrides = {k: raw[k] for k in OPTIONAL_OVERRIDES if k in raw}
-    unknown = sorted(set(raw) - set(CONTRACT_FIELDS) - set(OPTIONAL_OVERRIDES))
+    unknown = sorted(
+        set(raw) - set(CONTRACT_FIELDS) - set(OPTIONAL_OVERRIDES) - {"strategy", "params"}
+    )
     if unknown:
         raise InstructionError(
-            f"出现未知字段 {unknown}；契约字段 {list(CONTRACT_FIELDS)}，可选覆盖 {list(OPTIONAL_OVERRIDES)}",
+            f"出现未知字段 {unknown}；契约字段 {list(CONTRACT_FIELDS)}，"
+            "可选覆盖 {list(OPTIONAL_OVERRIDES)}，策略字段 strategy/params",
             code="UNKNOWN_FIELDS",
             extra={"unknown": unknown},
         )
@@ -183,9 +224,17 @@ def parse_instruction(raw: dict | str) -> Instruction:
         factor=factor,
         mapping={**mapping, "period_raw": raw["period"], "universe_raw": raw["universe"]},
         overrides=overrides,
+        strategy=strategy,
+        params=params,
+        strategy_version=info.version,
     )
 
 
 def looks_like_internal_spec(raw: dict) -> bool:
     """兼容已落库的内部 spec，方便复查时直接重跑。"""
-    return isinstance(raw, dict) and "factor" in raw and "start" in raw and "end" in raw
+    return (
+        isinstance(raw, dict)
+        and ("factor" in raw or "strategy" in raw)
+        and "start" in raw
+        and "end" in raw
+    )

@@ -23,7 +23,8 @@ from .broker import proposals as broker_proposals
 from .engine import run_backtest, run_factor_analysis
 from .instruction import UNIVERSE_ALIASES, InstructionError, parse_instruction
 from .paper import run_paper_session
-from .spec import FACTORS, REBALANCE, SpecError, parse_spec
+from .spec import FACTORS, REBALANCE, WEIGHTING, SpecError, parse_spec
+from .strategies import ids as strategy_ids
 from .validate import validate_strategy
 
 SERVER_NAME = "srq-compat"
@@ -34,17 +35,19 @@ SPEC_SCHEMA: dict[str, Any] = {
     "description": "结构化研究指令（引擎 spec）",
     "properties": {
         "factor": {"type": "string", "enum": sorted(FACTORS)},
+        "strategy": {"type": "string", "enum": strategy_ids()},
+        "params": {"type": "object", "description": "策略参数，按 strategy 的 params_schema"},
         "universe": {"type": "string", "enum": sorted(set(UNIVERSE_ALIASES.values()))},
         "start": {"type": "string", "description": "YYYY-MM-DD"},
         "end": {"type": "string", "description": "YYYY-MM-DD"},
         "rebalance": {"type": "string", "enum": sorted(REBALANCE)},
         "top_k": {"type": "integer", "minimum": 1, "maximum": 40},
-        "weighting": {"type": "string", "enum": ["equal"]},
+        "weighting": {"type": "string", "enum": sorted(WEIGHTING)},
         "cost_bps": {"type": "number", "minimum": 0},
         "seed": {"type": "integer", "minimum": 0},
         "data_version": {"type": "string"},
     },
-    "required": ["factor", "universe", "start", "end"],
+    "required": ["universe", "start", "end"],
     "additionalProperties": False,
 }
 
@@ -114,6 +117,8 @@ def _tool_research(args: dict) -> dict:
             "start": instruction.start,
             "end": instruction.end,
             "factor": instruction.factor,
+            "strategy": instruction.strategy,
+            "params": instruction.params,
         },
     }
     validation = validate_strategy(spec)

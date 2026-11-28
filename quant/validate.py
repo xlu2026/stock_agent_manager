@@ -6,8 +6,8 @@
 from __future__ import annotations
 
 from .data import load_panel
-from .factors import MIN_HISTORY
 from .spec import FACTORS, Spec, SpecError, parse_spec
+from .strategies import get as get_strategy, ids as strategy_ids
 
 
 def _check(check_id: str, status: str, detail: str, hint: str | None = None) -> dict:
@@ -32,7 +32,13 @@ def validate_strategy(raw: dict | str | Spec) -> dict:
                 "checks": [_check("spec.parse", "fail", str(exc), "按 spec 字段表重写研究指令")],
             }
 
-    checks.append(_check("spec.parse", "pass", f"spec 合法，因子={spec.factor}"))
+    checks.append(
+        _check(
+            "spec.parse",
+            "pass",
+            f"spec 合法，策略={spec.strategy}，因子={spec.factor or '-'}",
+        )
+    )
 
     panel = load_panel()
 
@@ -67,20 +73,36 @@ def validate_strategy(raw: dict | str | Spec) -> dict:
     else:
         checks.append(_check("data.pinned", "pass", f"数据版本已固定为 {panel.data_version}"))
 
-    # 因子预热窗口：start 之前是否够算因子（唯一来源：factors.MIN_HISTORY）
+    # 策略预热窗口：由策略注册表声明（旧单因子仍是 factors.MIN_HISTORY）
     start_idx = panel.index_of(spec.start)
-    need = MIN_HISTORY.get(spec.factor, 1)
+    info = get_strategy(spec.strategy)
+    need = info.warmup(spec.params)
+    label = spec.factor or spec.strategy
     if start_idx < need:
         checks.append(
             _check(
                 "factor.warmup",
                 "fail",
-                f"{spec.factor} 需要 {need} 个交易日预热，start={spec.start} 之前只有 {start_idx} 天",
+                f"{label} 需要 {need} 个交易日预热，start={spec.start} 之前只有 {start_idx} 天",
                 "把 start 往后推",
             )
         )
     else:
         checks.append(_check("factor.warmup", "pass", f"预热充足（{start_idx} >= {need}）"))
+
+    # 数据需求：基本面因子不能在没有 fundamentals 的快照上静默跑
+    required = info.required_data(spec.params)
+    if "fundamentals" in required and not panel.has_fundamentals():
+        checks.append(
+            _check(
+                "data.required",
+                "fail",
+                f"策略 {spec.strategy} 需要 fundamentals，但快照没有可用的 book/earnings",
+                "换带 fundamentals 的快照，或改用纯价格策略",
+            )
+        )
+    else:
+        checks.append(_check("data.required", "pass", f"数据需求满足：{sorted(required)}"))
 
     # 分散度
     if spec.top_k >= len(panel.assets):
@@ -131,4 +153,5 @@ def validate_strategy(raw: dict | str | Spec) -> dict:
         "checks": checks,
         "spec": spec.canonical(),
         "available_factors": FACTORS,
+        "available_strategies": strategy_ids(),
     }

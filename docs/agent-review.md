@@ -37,7 +37,7 @@
 | P2-10 空目录无法重试 | ✅ 已修 | 只按“文件”判空 |
 | P2-11 Agent 2 无取消/超时 | ✅ 已修 | `cancel_job` + `timeout_seconds`（杀进程树） |
 | P2-18 作业目录无清理 | ✅ 已修 | `cleanup_jobs`（keep/dry_run，running 不删） |
-| P2-19 `dv` 只覆盖 prices.csv | ⏳ 未做 | `manifest.sha256` 目前等于 prices 哈希；calendar/universe 变化不改变 dv（2026-11-12 实测两份不同快照同 dv） |
+| P2-19 `dv` 只覆盖 prices.csv | ✅ 已做（2026-11-26） | 新增 `manifest.snapshot_sha256` / `data_version`，覆盖 prices/calendar/fundamentals/universe；旧快照继续按 prices-only 兼容 |
 | P2-12 参数校验不足 | ✅ 已修 | `end/start` 格式、out_dir 必须在快照根下、sample/index/timeout 校验；`end<=base.end` 直接 noop |
 | P2-15 双入口 contract 不一致 | ✅ 已修 | Python 入口改为直接调 `run_research_instruction`，contract 由服务端统一生成 |
 | P2-16 `looks_like_internal_spec` 后门 | ✅ 已修 | 只有显式 `--internal-spec` 才接受原始 spec |

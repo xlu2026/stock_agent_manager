@@ -13,9 +13,10 @@ import math
 from dataclasses import dataclass
 from datetime import date
 
-from . import factors
+from . import factors, portfolio
 from .data import Panel, assert_universe, load_panel
 from .spec import Spec
+from .strategies import get as get_strategy
 
 ENGINE_VERSION = "engine-0.1.0"
 TRADING_DAYS_PER_YEAR = 252
@@ -96,6 +97,17 @@ def _scores_on(panel: Panel, factor: str, i: int) -> dict[str, float]:
     return {a: v for a, v in scored.items() if a in allowed}
 
 
+def _scores_for_spec(panel: Panel, spec: Spec, i: int) -> dict[str, float]:
+    """旧单因子路径保持逐位不变；新策略走注册表。"""
+    if spec.is_legacy_single_factor():
+        return _scores_on(panel, spec.factor, i)
+    scored = get_strategy(spec.strategy).score(panel, i, spec.params)
+    allowed = panel.allowed_at(i)
+    if allowed is None:
+        return scored
+    return {a: v for a, v in scored.items() if a in allowed}
+
+
 # ------------------------------------------------------------------- 回测主体
 
 
@@ -134,6 +146,10 @@ def experiment_id_for(spec: Spec, panel: Panel) -> str:
 def run_backtest(spec: Spec) -> Backtest:
     panel = load_panel()
     assert_universe(panel, spec.universe)
+    info = get_strategy(spec.strategy)
+    required = info.required_data(spec.params)
+    if "fundamentals" in required and not panel.has_fundamentals():
+        raise ValueError(f"策略 {spec.strategy} 需要 fundamentals，但当前快照没有可用的 book/earnings")
 
     if spec.data_version and spec.data_version != panel.data_version:
         raise ValueError(
@@ -182,13 +198,15 @@ def run_backtest(spec: Spec) -> Backtest:
         # 2) 若今天是调仓日，按 t-1 信号换仓并扣成本
         if j in reb_set:
             sig_idx = i - 1
-            sc = _scores_on(panel, spec.factor, sig_idx)
+            sc = _scores_for_spec(panel, spec, sig_idx)
             if len(sc) >= spec.top_k:
                 picked = factors.rank_desc(sc)[: spec.top_k]
-                new_w = {a: 1.0 / len(picked) for a in picked}
-                turnover = 0.5 * sum(
-                    abs(new_w.get(a, 0.0) - prev_weights.get(a, 0.0))
-                    for a in set(new_w) | set(prev_weights)
+                new_w = portfolio.construct(panel, picked, sc, sig_idx, spec.weighting)
+                cash_prev = (1.0 - sum(prev_weights.values())) if prev_weights else 0.0
+                cash_new = 1.0 - sum(new_w.values())
+                turnover = 0.5 * (
+                    sum(abs(new_w.get(a, 0.0) - prev_weights.get(a, 0.0)) for a in set(new_w) | set(prev_weights))
+                    + abs(cash_new - cash_prev)
                 )
                 cost = turnover * spec.cost_bps / 1e4
                 nav[j] *= 1.0 - cost
@@ -288,7 +306,7 @@ def run_backtest(spec: Spec) -> Backtest:
 
 
 def run_factor_analysis(spec: Spec, quantiles: int = 5) -> dict:
-    """IC 与分位收益：衡量因子截面预测力，不做任何组合优化。"""
+    """IC 与分位收益：衡量策略打分的截面预测力，不做任何组合优化。"""
     panel = load_panel()
     assert_universe(panel, spec.universe)
 
@@ -300,10 +318,16 @@ def run_factor_analysis(spec: Spec, quantiles: int = 5) -> dict:
 
     ic_series: list[dict] = []
     buckets: list[list[float]] = [[] for _ in range(quantiles)]
+    component_factors = (
+        list(spec.params.get("factors", {}))
+        if spec.strategy == "composite"
+        else ([spec.factor] if spec.factor else [])
+    )
+    component_ics: dict[str, list[float]] = {name: [] for name in component_factors}
 
     for k in range(len(reb_idx) - 1):
         t, nxt = reb_idx[k], reb_idx[k + 1]
-        sig = _scores_on(panel, spec.factor, t)
+        sig = _scores_for_spec(panel, spec, t)
         allowed = panel.allowed_at(t)
         fwd = {}
         for a in panel.assets:
@@ -315,6 +339,13 @@ def run_factor_analysis(spec: Spec, quantiles: int = 5) -> dict:
         rho = factors.spearman(sig, fwd)
         if rho is not None:
             ic_series.append({"date": panel.dates[t], "rank_ic": round(rho, 6)})
+        for name in component_factors:
+            csig = factors.scores(panel, name, t)
+            if allowed is not None:
+                csig = {a: v for a, v in csig.items() if a in allowed}
+            crho = factors.spearman(csig, fwd)
+            if crho is not None:
+                component_ics[name].append(crho)
 
         common = sorted(set(sig) & set(fwd))
         if len(common) >= quantiles:
@@ -340,7 +371,17 @@ def run_factor_analysis(spec: Spec, quantiles: int = 5) -> dict:
     return {
         "spec": spec.canonical(),
         "data_version": panel.data_version,
-        "factor": spec.factor,
+        "factor": spec.factor or spec.strategy,
+        "strategy": spec.strategy,
+        "params": spec.params,
+        "component_ic": {
+            name: {
+                "periods": len(vals),
+                "ic_mean": round(_mean(vals), 6),
+                "ic_ir": round((_mean(vals) / _stdev(vals)) if _stdev(vals) else 0.0, 4),
+            }
+            for name, vals in component_ics.items()
+        },
         "periods": len(ic_series),
         "ic_mean": round(ic_mean, 6),
         "ic_std": round(ic_std, 6),
